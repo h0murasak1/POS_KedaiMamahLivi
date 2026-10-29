@@ -18,11 +18,16 @@ export default function BottomNav() {
     return (
         <nav
             data-testid="bottom-nav"
-            className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-md border-t border-zinc-200/80 shadow-[0_-4px_20px_rgba(0,0,0,0.04)]"
+            className="lg:hidden fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-zinc-200/80 shadow-[0_-4px_20px_rgba(0,0,0,0.04)]"
             style={{
                 paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-                transform: 'translateZ(0)',
-                WebkitTransform: 'translateZ(0)',
+                // z-index eksplisit — lebih tinggi dari sidebar backdrop (z-50) tidak perlu,
+                // tapi harus di atas konten halaman (z-30 header). Gunakan inline agar pasti tidak
+                // di-override class Tailwind yang mungkin conflict
+                zIndex: 50,
+                // GPU composite layer — mencegah bottom nav "berkedip" saat scroll di iOS/Android
+                transform: 'translate3d(0, 0, 0)',
+                WebkitTransform: 'translate3d(0, 0, 0)',
             }}
         >
             <div className="h-[68px] grid grid-flow-col auto-cols-fr items-center px-2">

@@ -182,32 +182,32 @@ export default function LoginPage() {
       {/* Right form */}
       <section className="flex-1 flex flex-col">
         {/* Mobile hero strip */}
-        <div className="lg:hidden relative h-48 sm:h-56 overflow-hidden">
+        <div className="lg:hidden relative h-28 overflow-hidden shrink-0">
           <img src={HERO_IMG} alt="" className="absolute inset-0 w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-linen via-zinc-950/30 to-zinc-950/40" />
-          <div className="absolute top-5 left-5 flex items-center gap-2.5 text-white">
-            <BrandMark />
-            <p className="font-heading font-bold text-lg drop-shadow">Kedai Mamah Livi</p>
+          <div className="absolute inset-0 bg-gradient-to-t from-linen via-zinc-950/40 to-zinc-950/50" />
+          <div className="absolute top-4 left-4 flex items-center gap-2 text-white">
+            <BrandMark size="sm" />
+            <p className="font-heading font-bold text-base drop-shadow">Kedai Mamah Livi</p>
           </div>
         </div>
 
-        <div className="flex-1 flex items-start lg:items-center justify-center px-5 sm:px-8 -mt-10 lg:mt-0 pb-10 relative z-10">
+        <div className="flex-1 flex items-start lg:items-center justify-center px-4 sm:px-8 -mt-5 lg:mt-0 pb-6 relative z-10">
           <div
             key={shakeKey}
-            className={`w-full max-w-[420px] bg-white lg:bg-transparent rounded-3xl lg:rounded-none p-6 sm:p-8 lg:p-0 shadow-[0_20px_50px_-24px_rgba(24,24,27,0.35)] lg:shadow-none border border-zinc-100 lg:border-0 ${shakeKey ? 'animate-shake' : 'animate-fade-in-up'}`}
+            className={`w-full max-w-[420px] bg-white lg:bg-transparent rounded-3xl lg:rounded-none p-5 sm:p-8 lg:p-0 shadow-[0_20px_50px_-24px_rgba(24,24,27,0.35)] lg:shadow-none border border-zinc-100 lg:border-0 ${shakeKey ? 'animate-shake' : 'animate-fade-in-up'}`}
           >
-            <p className="text-sm font-semibold text-primary-700">Selamat datang kembali 👋</p>
-            <h2 className="font-heading text-3xl font-bold text-zinc-900 tracking-tight mt-1">Masuk ke akun</h2>
-            <p className="text-sm text-zinc-500 mt-1.5">Gunakan akun Pemilik atau Kasir yang terdaftar.</p>
+            <p className="text-xs sm:text-sm font-semibold text-primary-700">Selamat datang kembali 👋</p>
+            <h2 className="font-heading text-2xl sm:text-3xl font-bold text-zinc-900 tracking-tight mt-0.5">Masuk ke akun</h2>
+            <p className="text-xs sm:text-sm text-zinc-500 mt-1">Gunakan akun Pemilik atau Kasir yang terdaftar.</p>
 
             {errorMsg && (
-              <div className="mt-5 flex items-start gap-2.5 p-3 rounded-xl bg-red-50 border border-red-200 text-sm text-red-700 animate-fade-in-up" data-testid="login-error-message">
+              <div className="mt-4 flex items-start gap-2.5 p-3 rounded-xl bg-red-50 border border-red-200 text-xs sm:text-sm text-red-700 animate-fade-in-up" data-testid="login-error-message">
                 <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
                 <span className="font-medium">{errorMsg}</span>
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-4 mt-6" data-testid="login-form">
+            <form onSubmit={handleSubmit} className="space-y-3.5 mt-4 sm:mt-6" data-testid="login-form">
               <div>
                 <FieldLabel>Email</FieldLabel>
                 <div className="relative">
@@ -219,14 +219,30 @@ export default function LoginPage() {
                     placeholder="nama@kedaimamahlivi.com"
                     autoComplete="email"
                     data-testid="login-email-input"
-                    className={`${fieldClass} pl-10 min-h-12`}
+                    className={`${fieldClass} pl-10 min-h-11`}
                     required
                   />
                 </div>
               </div>
 
               <div>
-                <FieldLabel hint={capsLock ? '⚠ Caps Lock aktif' : null}>Password</FieldLabel>
+                <div className="flex items-center justify-between mb-1.5">
+                  <FieldLabel hint={capsLock ? '⚠ Caps Lock aktif' : null}>Password</FieldLabel>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setForgotEmail(email || '')
+                      setForgotPin('')
+                      setForgotNewPassword('')
+                      setForgotSent(false)
+                      setShowForgotModal(true)
+                    }}
+                    data-testid="login-forgot-password-link"
+                    className="text-xs font-bold text-primary-600 hover:text-primary-700 hover:underline"
+                  >
+                    Lupa password?
+                  </button>
+                </div>
                 <div className="relative">
                   <Lock className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <input
@@ -237,7 +253,7 @@ export default function LoginPage() {
                     placeholder="Masukkan password"
                     autoComplete="current-password"
                     data-testid="login-password-input"
-                    className={`${fieldClass} pl-10 pr-12 min-h-12`}
+                    className={`${fieldClass} pl-10 pr-12 min-h-11`}
                     required
                   />
                   <button
@@ -256,7 +272,7 @@ export default function LoginPage() {
                 type="submit"
                 disabled={loading}
                 data-testid="login-submit-button"
-                className="group w-full min-h-13 py-3.5 mt-2 bg-gradient-to-br from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 active:scale-[0.98] text-white font-bold rounded-2xl transition-[background-color,transform,box-shadow] shadow-[0_12px_28px_-10px_rgba(234,88,12,0.7)] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-base"
+                className="group w-full min-h-12 py-3 mt-1 bg-gradient-to-br from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 active:scale-[0.98] text-white font-bold rounded-2xl transition-[background-color,transform,box-shadow] shadow-[0_12px_28px_-10px_rgba(234,88,12,0.7)] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-base"
               >
                 {loading ? (
                   <>
@@ -275,27 +291,22 @@ export default function LoginPage() {
               </button>
             </form>
 
-            <div className="mt-6 pt-4 border-t border-zinc-100 flex flex-col gap-2.5">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-zinc-500 font-medium">Lupa password pemilik?</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setForgotEmail(email || '')
-                    setForgotPin('')
-                    setForgotNewPassword('')
-                    setForgotSent(false)
-                    setShowForgotModal(true)
-                  }}
-                  data-testid="login-forgot-password-link"
-                  className="font-bold text-primary-600 hover:text-primary-700 hover:underline"
-                >
-                  Reset Password
-                </button>
-              </div>
-              <p className="text-[11px] text-zinc-400 leading-relaxed">
-                Untuk staf kasir, silakan hubungi pemilik kedai untuk reset atau pembuatan password baru.
-              </p>
+            <div className="mt-4 pt-3 border-t border-zinc-100 flex items-center justify-between text-xs">
+              <span className="text-zinc-500">Lupa password pemilik?</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setForgotEmail(email || '')
+                  setForgotPin('')
+                  setForgotNewPassword('')
+                  setForgotSent(false)
+                  setShowForgotModal(true)
+                }}
+                data-testid="login-forgot-password-link"
+                className="font-bold text-primary-600 hover:text-primary-700 hover:underline"
+              >
+                Reset di sini
+              </button>
             </div>
           </div>
         </div>
