@@ -346,7 +346,7 @@ export default function SettingsPage() {
               </Card>
             )}
 
-            <div className="sticky bottom-[calc(var(--bnav)+12px)] lg:bottom-4 z-20 flex justify-end">
+            <div className="sticky bottom-4 z-20 flex justify-end">
               <Button onClick={saveSettings} loading={saving} icon={Save} size="lg" data-testid="settings-save-button" className="w-full sm:w-auto">
                 Simpan Pengaturan
               </Button>

@@ -480,9 +480,9 @@ export default function POSPage() {
   const cashValue = parseFloat(cashReceived) || 0
 
   return (
-    <div className="h-[calc(100dvh-var(--bnav))] flex flex-col overflow-hidden">
+    <div className="h-full flex-1 flex flex-col overflow-hidden min-h-0">
       <Header title="Kasir" subtitle="Catat pesanan pelanggan dengan cepat" />
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden relative">
         {/* Menu Area */}
         <section className="flex-1 flex flex-col overflow-hidden min-w-0">
           <div className="px-3 sm:px-5 pt-3 sm:pt-4 pb-3 space-y-3 bg-linen">
@@ -598,7 +598,7 @@ export default function POSPage() {
 
       {/* Floating cart bar — phone & tablet portrait */}
       {cart.length > 0 && (
-        <div className="lg:hidden fixed inset-x-3 sm:inset-x-6 bottom-[calc(var(--bnav)+12px)] z-30 animate-scale-in" data-testid="mobile-cart-bar">
+        <div className="lg:hidden absolute inset-x-3 sm:inset-x-6 bottom-3 z-30 animate-scale-in" data-testid="mobile-cart-bar">
           <div className="flex items-center gap-2 p-2 rounded-[22px] bg-zinc-900 text-white shadow-[0_18px_40px_-14px_rgba(24,24,27,0.7)]">
             <button
               onClick={() => setMobileCartOpen(true)}

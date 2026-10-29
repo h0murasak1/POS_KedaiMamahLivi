@@ -65,7 +65,7 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="min-h-[100dvh] bg-linen flex items-center justify-center p-4">
+    <div className="h-full h-[100dvh] bg-linen flex items-center justify-center p-4 overflow-y-auto">
       <div className="w-full max-w-[420px] bg-white rounded-3xl p-6 sm:p-8 shadow-[0_20px_50px_-24px_rgba(24,24,27,0.35)] border border-zinc-100 animate-fade-in-up">
         <div className="flex items-center gap-3 mb-6">
           <BrandMark />

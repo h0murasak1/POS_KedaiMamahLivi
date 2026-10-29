@@ -138,7 +138,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-[100dvh] bg-linen flex">
+    <div className="h-full h-[100dvh] bg-linen flex flex-col lg:flex-row overflow-y-auto">
       {/* Left brand panel (desktop/tablet landscape) */}
       <section className="hidden lg:flex relative w-[46%] xl:w-1/2 overflow-hidden bg-zinc-950 text-white">
         <img src={HERO_IMG} alt="Nasi goreng spesial" className="absolute inset-0 w-full h-full object-cover opacity-60 scale-105" />
