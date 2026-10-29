@@ -3,6 +3,8 @@ import { supabase } from '@/lib/supabase'
 import { db } from '@/lib/db'
 import Header from '@/components/layout/Header'
 import Card, { CardHeader, CardTitle } from '@/components/ui/Card'
+import Badge from '@/components/ui/Badge'
+import EmptyState from '@/components/ui/EmptyState'
 import { formatRupiah, formatDate } from '@/lib/utils'
 import {
   BarChart,
@@ -16,9 +18,9 @@ import {
   Pie,
   Cell,
 } from 'recharts'
-import { TrendingUp, Award, CreditCard } from 'lucide-react'
+import { TrendingUp, Award, CreditCard, Wallet, Receipt, Flame } from 'lucide-react'
 
-const COLORS = ['#ec4899', '#f43f5e', '#a855f7', '#fb7185', '#d946ef', '#f472b6']
+const COLORS = ['#ea580c', '#f59e0b', '#10b981', '#0284c7', '#71717a', '#fb923c']
 
 export default function ReportsPage() {
   const [period, setPeriod] = useState('today')
@@ -92,7 +94,7 @@ export default function ReportsPage() {
 
       // 3. Merge server and local orders uniquely by id
       const orderMap = new Map()
-      ;(serverOrders || []).forEach((o) => orderMap.set(o.id, o))
+        ; (serverOrders || []).forEach((o) => orderMap.set(o.id, o))
       localOrders.forEach((o) => {
         if (!orderMap.has(o.id)) orderMap.set(o.id, o)
       })
@@ -143,10 +145,10 @@ export default function ReportsPage() {
             name === 'cash'
               ? 'Tunai'
               : name === 'qris'
-              ? 'QRIS'
-              : name === 'transfer'
-              ? 'Transfer'
-              : 'Lainnya',
+                ? 'QRIS'
+                : name === 'transfer'
+                  ? 'Transfer'
+                  : 'Lainnya',
           value,
         }))
       )
@@ -206,211 +208,174 @@ export default function ReportsPage() {
     }
   }
 
+  const periods = [
+    { val: 'today', label: 'Hari Ini' },
+    { val: 'week', label: '7 Hari' },
+    { val: 'month', label: '30 Hari' },
+    { val: 'year', label: '1 Tahun' },
+  ]
+  const paymentTotal = paymentData.reduce((s, d) => s + d.value, 0) || 1
+  const maxQty = topProducts[0]?.qty || 1
+  const bestSlot = salesData.reduce((best, d) => (d.amount > (best?.amount || 0) ? d : best), null)
+
+  const summaryCards = [
+    { id: 'total', label: 'Total Pendapatan', value: formatRupiah(summary.total), icon: Wallet, dark: true },
+    { id: 'count', label: 'Transaksi Selesai', value: `${summary.count}`, suffix: 'transaksi', icon: Receipt },
+    { id: 'avg', label: 'Rata-rata / Transaksi', value: formatRupiah(summary.avg), icon: TrendingUp, mono: true },
+    { id: 'peak', label: period === 'today' ? 'Jam Tersibuk' : 'Hari Terlaris', value: bestSlot?.date || '-', icon: Flame },
+  ]
+
   return (
     <div>
-      <Header title="Laporan Penjualan" />
-      <div className="p-4 sm:p-6 space-y-6 animate-fade-in-up">
-        {/* Period Selector Tabs */}
-        <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-          {[
-            { val: 'today', label: 'Hari Ini' },
-            { val: 'week', label: '7 Hari Terakhir' },
-            { val: 'month', label: '30 Hari Terakhir' },
-            { val: 'year', label: '1 Tahun' },
-          ].map((p) => (
+      <Header title="Laporan Penjualan" subtitle="Pantau performa kedai dari waktu ke waktu" />
+      <div className="p-4 sm:p-6 lg:p-8 space-y-5 sm:space-y-6 max-w-[1400px] w-full">
+        <div className="flex gap-1 p-1 bg-zinc-100 rounded-2xl w-full sm:w-fit" data-testid="report-period-tabs">
+          {periods.map((p) => (
             <button
               key={p.val}
               onClick={() => setPeriod(p.val)}
-              className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all active:scale-95 ${
-                period === p.val
-                  ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-md shadow-primary-200/40'
-                  : 'bg-white border border-pink-200 text-gray-700 hover:bg-pink-50/80 hover:text-primary-700 shadow-2xs'
-              }`}
+              data-testid={`report-period-${p.val}`}
+              className={`flex-1 sm:flex-none h-10 px-5 rounded-xl text-sm font-semibold whitespace-nowrap transition-[background-color,color,box-shadow] ${period === p.val ? 'bg-white text-zinc-900 shadow-[0_1px_3px_rgba(24,24,27,0.12)]' : 'text-zinc-500 hover:text-zinc-800'
+                }`}
             >
               {p.label}
             </button>
           ))}
         </div>
 
-        {/* Summary Metric Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-5">
-          <Card className="p-5 sm:p-6 card-glow">
-            <p className="text-xs sm:text-sm text-gray-500 font-semibold">Total Pendapatan</p>
-            <p className="text-xl sm:text-2xl font-black text-primary-600 mt-1 tracking-tight">
-              {loading ? '...' : formatRupiah(summary.total)}
-            </p>
-          </Card>
-          <Card className="p-5 sm:p-6 card-glow">
-            <p className="text-xs sm:text-sm text-gray-500 font-semibold">Jumlah Transaksi Selesai</p>
-            <p className="text-xl sm:text-2xl font-black text-gray-900 mt-1 tracking-tight">
-              {loading ? '...' : `${summary.count} Transaksi`}
-            </p>
-          </Card>
-          <Card className="p-5 sm:p-6 card-glow">
-            <p className="text-xs sm:text-sm text-gray-500 font-semibold">Rata-rata per Transaksi</p>
-            <p className="text-xl sm:text-2xl font-black text-gray-900 mt-1 tracking-tight">
-              {loading ? '...' : formatRupiah(summary.avg)}
-            </p>
-          </Card>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 stagger">
+          {summaryCards.map((c) => (
+            <div
+              key={c.id}
+              data-testid={`report-summary-${c.id}`}
+              className={`relative overflow-hidden rounded-2xl p-4 sm:p-5 border ${c.dark ? 'bg-zinc-900 border-zinc-900 text-white col-span-2 lg:col-span-1' : 'bg-white border-zinc-200/80'}`}
+            >
+              {c.dark && <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-primary-600/40 blur-2xl" />}
+              <div className="relative flex items-center justify-between">
+                <p className={`text-xs font-semibold ${c.dark ? 'text-white/60' : 'text-zinc-500'}`}>{c.label}</p>
+                <c.icon className={`w-4 h-4 ${c.dark ? 'text-primary-300' : 'text-zinc-400'}`} />
+              </div>
+              <p className={`relative mt-2 font-semibold tracking-tight truncate ${c.dark || c.mono ? 'font-mono' : 'font-heading font-bold'} ${c.dark ? 'text-2xl sm:text-3xl' : 'text-lg sm:text-2xl text-zinc-900'}`}>
+                {loading ? '…' : c.value}
+                {c.suffix && !loading && <span className="text-xs font-sans font-medium text-zinc-400 ml-1">{c.suffix}</span>}
+              </p>
+            </div>
+          ))}
         </div>
 
-        {/* Charts Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Sales Bar Chart */}
-          <Card className="p-5 sm:p-6 flex flex-col justify-between">
-            <CardHeader className="mb-4">
-              <CardTitle>Grafik Penjualan ({period === 'today' ? 'Per Jam' : 'Per Tanggal'})</CardTitle>
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 sm:gap-5">
+          <Card className="lg:col-span-3" hover={false} data-testid="report-sales-chart">
+            <CardHeader>
+              <div>
+                <CardTitle>Grafik Omzet</CardTitle>
+                <p className="text-xs text-zinc-500 mt-0.5">{period === 'today' ? 'Per jam' : 'Per tanggal'}</p>
+              </div>
             </CardHeader>
             {loading ? (
-              <div className="h-64 flex items-center justify-center text-gray-400 text-sm">
-                Memuat data grafik...
-              </div>
+              <div className="h-72 animate-shimmer rounded-2xl" />
             ) : salesData.length > 0 ? (
-              <div className="h-64 w-full">
+              <div className="h-72 w-full -ml-2">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={salesData} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#fce7f3" />
-                    <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#9d174d' }} axisLine={false} tickLine={false} />
-                    <YAxis
-                      tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
-                      tick={{ fontSize: 11, fill: '#9d174d' }}
-                      axisLine={false}
-                      tickLine={false}
-                    />
+                  <BarChart data={salesData} margin={{ top: 10, right: 8, left: -10, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="reportBar" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#f97316" />
+                        <stop offset="100%" stopColor="#ea580c" stopOpacity={0.75} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f4f4f5" />
+                    <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#71717a' }} axisLine={false} tickLine={false} />
+                    <YAxis tickFormatter={(v) => `${(v / 1000).toFixed(0)}rb`} tick={{ fontSize: 11, fill: '#71717a' }} axisLine={false} tickLine={false} />
                     <Tooltip
+                      cursor={{ fill: 'rgba(234,88,12,0.06)' }}
                       formatter={(v) => [formatRupiah(v), 'Omzet']}
-                      contentStyle={{ 
-                        borderRadius: '16px', 
-                        borderColor: '#fbcfe8', 
-                        boxShadow: '0 10px 25px -5px rgba(236, 72, 153, 0.15)',
-                        backgroundColor: '#ffffff'
-                      }}
+                      contentStyle={{ borderRadius: 14, border: '1px solid #e4e4e7', boxShadow: '0 12px 30px -12px rgba(24,24,27,0.25)', fontSize: 12 }}
                     />
-                    <Bar dataKey="amount" fill="#ec4899" radius={[8, 8, 0, 0]} />
+                    <Bar dataKey="amount" fill="url(#reportBar)" radius={[8, 8, 2, 2]} maxBarSize={48} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
             ) : (
-              <div className="h-64 flex flex-col items-center justify-center text-gray-400 bg-pink-50/30 rounded-2xl border border-dashed border-pink-200">
-                <TrendingUp className="w-10 h-10 mb-2 opacity-30 text-primary-400" />
-                <p className="text-sm font-bold text-gray-600">Tidak ada data transaksi pada periode ini</p>
-              </div>
+              <EmptyState compact icon={TrendingUp} title="Tidak ada transaksi" description="Belum ada penjualan pada periode ini." />
             )}
           </Card>
 
-          {/* Payment Method Distribution */}
-          <Card className="p-5 sm:p-6 flex flex-col justify-between">
-            <CardHeader className="mb-4">
-              <CardTitle>Distribusi Metode Pembayaran</CardTitle>
+          <Card className="lg:col-span-2" hover={false} data-testid="report-payment-chart">
+            <CardHeader>
+              <div>
+                <CardTitle>Metode Pembayaran</CardTitle>
+                <p className="text-xs text-zinc-500 mt-0.5">Porsi omzet per metode</p>
+              </div>
             </CardHeader>
             {loading ? (
-              <div className="h-64 flex items-center justify-center text-gray-400 text-sm">
-                Memuat data metode pembayaran...
-              </div>
+              <div className="h-72 animate-shimmer rounded-2xl" />
             ) : paymentData.length > 0 ? (
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-6 h-64">
-                <div className="w-48 h-48">
+              <div className="flex flex-col items-center gap-5">
+                <div className="relative w-44 h-44">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      <Pie
-                        data={paymentData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={48}
-                        outerRadius={78}
-                        paddingAngle={5}
-                        dataKey="value"
-                      >
-                        {paymentData.map((_, idx) => (
-                          <Cell key={idx} fill={COLORS[idx % COLORS.length]} />
-                        ))}
+                      <Pie data={paymentData} cx="50%" cy="50%" innerRadius={54} outerRadius={80} paddingAngle={3} dataKey="value" stroke="none">
+                        {paymentData.map((_, idx) => <Cell key={idx} fill={COLORS[idx % COLORS.length]} />)}
                       </Pie>
-                      <Tooltip formatter={(v) => formatRupiah(v)} />
+                      <Tooltip formatter={(v) => formatRupiah(v)} contentStyle={{ borderRadius: 14, border: '1px solid #e4e4e7', fontSize: 12 }} />
                     </PieChart>
                   </ResponsiveContainer>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Metode</span>
+                    <span className="font-heading text-2xl font-bold text-zinc-900">{paymentData.length}</span>
+                  </div>
                 </div>
-                <div className="space-y-3">
+                <div className="w-full space-y-2.5">
                   {paymentData.map((d, idx) => (
-                    <div key={d.name} className="flex items-center gap-3 text-sm">
-                      <div
-                        className="w-3.5 h-3.5 rounded-full shrink-0 shadow-2xs"
-                        style={{ backgroundColor: COLORS[idx % COLORS.length] }}
-                      />
-                      <span className="font-semibold text-gray-700">{d.name}:</span>
-                      <span className="font-black text-gray-900">{formatRupiah(d.value)}</span>
+                    <div key={d.name} className="flex items-center gap-3 text-sm" data-testid={`report-payment-row-${d.name.toLowerCase()}`}>
+                      <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: COLORS[idx % COLORS.length] }} />
+                      <span className="font-semibold text-zinc-700 flex-1">{d.name}</span>
+                      <span className="text-xs font-semibold text-zinc-400">{Math.round((d.value / paymentTotal) * 100)}%</span>
+                      <span className="font-mono text-sm font-semibold text-zinc-900 tabular">{formatRupiah(d.value)}</span>
                     </div>
                   ))}
                 </div>
               </div>
             ) : (
-              <div className="h-64 flex flex-col items-center justify-center text-gray-400 bg-pink-50/30 rounded-2xl border border-dashed border-pink-200">
-                <CreditCard className="w-10 h-10 mb-2 opacity-30 text-primary-400" />
-                <p className="text-sm font-bold text-gray-600">Tidak ada data pembayaran</p>
-              </div>
+              <EmptyState compact icon={CreditCard} title="Tidak ada data" description="Belum ada pembayaran pada periode ini." />
             )}
           </Card>
         </div>
 
-        {/* Top Products Table */}
-        <Card className="p-5 sm:p-6">
-          <CardHeader className="mb-4">
-            <div className="flex items-center justify-between w-full">
-              <div>
-                <CardTitle>Peringkat Menu Terlaris</CardTitle>
-                <p className="text-xs text-gray-500 mt-0.5">Daftar produk paling banyak dipesan pada periode ini</p>
-              </div>
-              <span className="text-xs font-bold px-3 py-1 bg-primary-50 text-primary-700 rounded-xl border border-primary-200/60 shadow-2xs">
-                Top 10 Menu
-              </span>
+        <Card hover={false} data-testid="report-top-products">
+          <CardHeader>
+            <div>
+              <CardTitle>Peringkat Menu Terlaris</CardTitle>
+              <p className="text-xs text-zinc-500 mt-0.5">Menu paling banyak dipesan pada periode ini</p>
             </div>
+            <Badge variant="primary">Top 10</Badge>
           </CardHeader>
-
           {loading ? (
-            <div className="py-8 text-center text-gray-400 text-sm">Memuat data menu...</div>
+            <div className="space-y-2">{[0, 1, 2, 3].map((i) => <div key={i} className="h-12 animate-shimmer rounded-xl" />)}</div>
           ) : topProducts.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-pink-100 text-xs font-bold text-gray-400 uppercase tracking-wider">
-                    <th className="text-left py-3 px-3">No</th>
-                    <th className="text-left py-3 px-3">Nama Menu</th>
-                    <th className="text-right py-3 px-3">Porsi Terjual</th>
-                    <th className="text-right py-3 px-3">Total Pendapatan</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-pink-50">
-                  {topProducts.map((p, idx) => (
-                    <tr key={p.name} className="hover:bg-pink-50/40 transition-colors">
-                      <td className="py-3 px-3">
-                        <span
-                          className={`w-7 h-7 rounded-xl inline-flex items-center justify-center text-xs font-black ${
-                            idx === 0
-                              ? 'bg-gradient-to-br from-amber-400 to-amber-500 text-white shadow-xs'
-                              : idx === 1
-                              ? 'bg-gradient-to-br from-slate-300 to-slate-400 text-white shadow-xs'
-                              : idx === 2
-                              ? 'bg-gradient-to-br from-amber-600 to-amber-700 text-white shadow-xs'
-                              : 'bg-primary-100 text-primary-800'
-                          }`}
-                        >
-                          {idx + 1}
-                        </span>
-                      </td>
-                      <td className="py-3 px-3 font-bold text-gray-900">{p.name}</td>
-                      <td className="py-3 px-3 text-right font-semibold text-gray-700">{p.qty} porsi</td>
-                      <td className="py-3 px-3 text-right font-black text-primary-600">
-                        {formatRupiah(p.revenue)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="divide-y divide-zinc-100 stagger">
+              {topProducts.map((p, idx) => (
+                <div key={p.name} className="flex items-center gap-3 sm:gap-4 py-3" data-testid={`report-top-product-${idx}`}>
+                  <span className={`w-8 h-8 rounded-xl text-xs font-bold flex items-center justify-center shrink-0 ${idx === 0 ? 'bg-secondary-400 text-secondary-950' : idx === 1 ? 'bg-zinc-300 text-zinc-800' : idx === 2 ? 'bg-primary-200 text-primary-900' : 'bg-zinc-100 text-zinc-500'}`}>
+                    {idx === 0 ? <Award className="w-4 h-4" /> : idx + 1}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm font-semibold text-zinc-900 truncate">{p.name}</p>
+                      <p className="font-mono text-sm font-semibold text-zinc-900 shrink-0 tabular">{formatRupiah(p.revenue)}</p>
+                    </div>
+                    <div className="flex items-center gap-2 mt-1.5">
+                      <div className="flex-1 h-1.5 rounded-full bg-zinc-100 overflow-hidden">
+                        <div className="h-full rounded-full bg-gradient-to-r from-primary-500 to-secondary-400" style={{ width: `${(p.qty / maxQty) * 100}%` }} />
+                      </div>
+                      <span className="text-[11px] font-semibold text-zinc-500 w-16 text-right">{p.qty} porsi</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           ) : (
-            <div className="py-12 flex flex-col items-center justify-center text-gray-400 bg-pink-50/30 rounded-2xl border border-dashed border-pink-200">
-              <Award className="w-10 h-10 mb-2 opacity-30 text-primary-400" />
-              <p className="text-sm font-bold text-gray-600">Belum ada menu terjual pada periode ini</p>
-            </div>
+            <EmptyState compact icon={Award} title="Belum ada menu terjual" description="Peringkat akan muncul setelah ada transaksi." />
           )}
         </Card>
       </div>

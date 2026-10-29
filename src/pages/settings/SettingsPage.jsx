@@ -4,9 +4,11 @@ import { db } from '@/lib/db'
 import Header from '@/components/layout/Header'
 import Card, { CardHeader, CardTitle } from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
-import Input from '@/components/ui/Input'
+import Input, { fieldClass, FieldLabel } from '@/components/ui/Input'
+import ReceiptView from '@/components/pos/ReceiptView'
+import { useSoundEnabled, setSoundEnabled, playSuccess } from '@/lib/sound'
 import toast from 'react-hot-toast'
-import { Save, Store, Shield, KeyRound, Eye, EyeOff } from 'lucide-react'
+import { Save, Store, Shield, KeyRound, Eye, EyeOff, Smartphone, Volume2, VolumeX } from 'lucide-react'
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState({
@@ -20,6 +22,7 @@ export default function SettingsPage() {
   const [showPin, setShowPin] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const soundOn = useSoundEnabled()
 
   useEffect(() => { fetchSettings() }, [])
 
@@ -78,91 +81,140 @@ export default function SettingsPage() {
 
   const update = (key, value) => setSettings(prev => ({ ...prev, [key]: value }))
 
+  const sampleOrder = {
+    order_number: 'LCL-CONTOH-001',
+    created_at_local: new Date().toISOString(),
+    cashier_name: 'Kasir',
+    subtotal: 33000,
+    discount_amount: 0,
+    total_amount: 33000,
+    payment_method: 'cash',
+    cash_received: 50000,
+    change_amount: 17000,
+  }
+  const sampleItems = [
+    { id: 's1', product_name: 'Nasi Goreng Spesial', quantity: 1, unit_price: 25000, variant_price_addition: 0, subtotal: 25000 },
+    { id: 's2', product_name: 'Es Teh Manis', variant_name: 'Jumbo', quantity: 2, unit_price: 3000, variant_price_addition: 1000, subtotal: 8000 },
+  ]
+
   return (
     <div>
-      <Header title="Pengaturan Kedai" />
-      <div className="p-4 sm:p-6 max-w-3xl space-y-6">
-        {/* Informasi Kedai */}
-        <Card className="p-5 sm:p-6 hover:border-pink-300 card-glow transition-all">
-          <CardHeader className="mb-4">
-            <div className="flex items-center gap-3.5">
-              <div className="w-11 h-11 bg-pink-100/70 text-primary-600 rounded-2xl flex items-center justify-center shrink-0 shadow-2xs">
-                <Store className="w-5 h-5" />
+      <Header title="Pengaturan" subtitle="Informasi kedai, struk & keamanan" />
+      <div className="p-4 sm:p-6 lg:p-8 max-w-[1200px] w-full grid lg:grid-cols-[1fr_340px] gap-6 items-start">
+        <div className="space-y-5">
+          {/* Store info */}
+          <Card hover={false} data-testid="settings-store-card">
+            <CardHeader>
+              <div className="flex items-center gap-3.5">
+                <div className="w-11 h-11 bg-primary-50 border border-primary-200/70 text-primary-700 rounded-2xl flex items-center justify-center shrink-0"><Store className="w-5 h-5" /></div>
+                <div>
+                  <CardTitle>Informasi Kedai</CardTitle>
+                  <p className="text-xs text-zinc-500 mt-0.5">Tampil di bagian atas struk pelanggan</p>
+                </div>
               </div>
-              <div>
-                <CardTitle>Informasi Kedai</CardTitle>
-                <p className="text-xs text-gray-500 mt-0.5">Nama dan kontak yang tampil pada struk belanja pelanggan</p>
+            </CardHeader>
+            {loading ? (
+              <div className="space-y-3">{[0, 1, 2].map((i) => <div key={i} className="h-11 animate-shimmer rounded-xl" />)}</div>
+            ) : (
+              <div className="space-y-4">
+                <Input label="Nama Kedai" value={settings.store_name} onChange={e => update('store_name', e.target.value)} placeholder="Nama kedai Anda" data-testid="settings-store-name-input" />
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <Input label="Alamat" value={settings.store_address} onChange={e => update('store_address', e.target.value)} placeholder="Alamat kedai" data-testid="settings-store-address-input" />
+                  <Input label="Telepon / WhatsApp" value={settings.store_phone} onChange={e => update('store_phone', e.target.value)} placeholder="08xx-xxxx-xxxx" data-testid="settings-store-phone-input" />
+                </div>
+                <div>
+                  <FieldLabel>Catatan Bawah Struk</FieldLabel>
+                  <textarea value={settings.receipt_footer} onChange={e => update('receipt_footer', e.target.value)} rows={2} placeholder="Pesan di bagian bawah struk" data-testid="settings-receipt-footer-input" className={`${fieldClass} resize-none`} />
+                </div>
               </div>
-            </div>
-          </CardHeader>
+            )}
+          </Card>
 
-          <div className="space-y-4">
-            <Input label="Nama Kedai" value={settings.store_name}
-              onChange={e => update('store_name', e.target.value)} placeholder="Nama kedai Anda" />
-            <Input label="Alamat Kedai" value={settings.store_address}
-              onChange={e => update('store_address', e.target.value)} placeholder="Alamat lengkap kedai" />
-            <Input label="No. Telepon / WhatsApp" value={settings.store_phone}
-              onChange={e => update('store_phone', e.target.value)} placeholder="08xx-xxxx-xxxx" />
-            <div>
-              <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1.5">Catatan Bawah Struk</label>
-              <textarea value={settings.receipt_footer}
-                onChange={e => update('receipt_footer', e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-white border border-pink-200/80 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-400 text-sm text-gray-800 shadow-2xs transition-all"
-                rows={3} placeholder="Pesan di bagian bawah struk" />
-            </div>
-          </div>
-        </Card>
-
-        {/* Keamanan & Otorisasi PIN Owner */}
-        <Card className="p-5 sm:p-6 hover:border-pink-300 card-glow transition-all">
-          <CardHeader className="mb-4">
-            <div className="flex items-center gap-3.5">
-              <div className="w-11 h-11 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center shrink-0 shadow-2xs border border-amber-200/50">
-                <Shield className="w-5 h-5" />
+          {/* Security */}
+          <Card hover={false} data-testid="settings-security-card">
+            <CardHeader>
+              <div className="flex items-center gap-3.5">
+                <div className="w-11 h-11 bg-amber-50 border border-amber-200 text-amber-700 rounded-2xl flex items-center justify-center shrink-0"><Shield className="w-5 h-5" /></div>
+                <div>
+                  <CardTitle>PIN Otorisasi Pembatalan</CardTitle>
+                  <p className="text-xs text-zinc-500 mt-0.5">Dimasukkan Owner saat kasir membatalkan transaksi di tempat</p>
+                </div>
               </div>
-              <div>
-                <CardTitle>Keamanan & Otorisasi Pembatalan</CardTitle>
-                <p className="text-xs text-gray-500 mt-0.5">
-                  PIN otorisasi yang harus dimasukkan kasir saat membatalkan transaksi di tempat
-                </p>
-              </div>
-            </div>
-          </CardHeader>
-
-          <div className="space-y-4">
-            <div>
-              <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1.5">
-                PIN Otorisasi Owner (4 - 6 Digit)
-              </label>
-              <div className="relative max-w-xs">
+            </CardHeader>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+              <div className="relative sm:w-64">
+                <KeyRound className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   type={showPin ? 'text' : 'password'}
+                  inputMode="numeric"
                   maxLength={6}
                   value={settings.owner_pin}
                   onChange={(e) => update('owner_pin', e.target.value.replace(/\D/g, ''))}
-                  placeholder="Misal: 1234"
-                  className="w-full pl-10 pr-10 py-2.5 border border-pink-200/80 rounded-xl tracking-widest text-lg font-mono focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-400 bg-white shadow-2xs"
+                  placeholder="4–6 digit"
+                  data-testid="settings-owner-pin-input"
+                  className={`${fieldClass} pl-10 pr-11 font-mono tracking-[0.4em] text-lg`}
                 />
-                <KeyRound className="w-4 h-4 text-primary-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <button
-                  type="button"
-                  onClick={() => setShowPin(!showPin)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary-600"
-                >
+                <button type="button" onClick={() => setShowPin(!showPin)} data-testid="settings-toggle-pin-button" className="absolute right-1.5 top-1/2 -translate-y-1/2 w-9 h-9 rounded-lg flex items-center justify-center text-zinc-400 hover:text-zinc-800 hover:bg-zinc-100">
                   {showPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
-              <p className="text-xs text-gray-500 mt-2 leading-relaxed">
-                Default: <strong className="text-primary-600 font-bold">1234</strong>. Jangan berikan PIN ini sembarangan kepada kasir. Kasir hanya dapat membatalkan transaksi jika Owner memasukkan PIN ini atau Owner menyetujuinya dari jarak jauh.
-              </p>
+              <div className="flex gap-1.5" aria-hidden>
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <span key={i} className={`w-2.5 h-2.5 rounded-full transition-colors ${i < (settings.owner_pin?.length || 0) ? 'bg-primary-600' : 'bg-zinc-200'}`} />
+                ))}
+              </div>
             </div>
-          </div>
-        </Card>
+            <p className="text-xs text-zinc-500 mt-3 leading-relaxed">
+              Default <b className="text-zinc-800">1234</b> — segera ganti dan jangan bagikan ke kasir. Kasir hanya bisa membatalkan transaksi dengan PIN ini atau persetujuan Owner dari jarak jauh.
+            </p>
+          </Card>
 
-        <div className="flex justify-end pt-2">
-          <Button onClick={saveSettings} loading={saving} icon={Save} size="lg">
-            Simpan Seluruh Pengaturan
-          </Button>
+          {/* Device preferences */}
+          <Card hover={false} data-testid="settings-device-card">
+            <CardHeader>
+              <div className="flex items-center gap-3.5">
+                <div className="w-11 h-11 bg-sky-50 border border-sky-200 text-sky-700 rounded-2xl flex items-center justify-center shrink-0"><Smartphone className="w-5 h-5" /></div>
+                <div>
+                  <CardTitle>Preferensi Perangkat Ini</CardTitle>
+                  <p className="text-xs text-zinc-500 mt-0.5">Tersimpan di perangkat, tidak memengaruhi kasir lain</p>
+                </div>
+              </div>
+            </CardHeader>
+            <div className="flex items-center justify-between p-3.5 rounded-2xl bg-zinc-50 border border-zinc-200">
+              <div className="flex items-center gap-3">
+                {soundOn ? <Volume2 className="w-5 h-5 text-primary-600" /> : <VolumeX className="w-5 h-5 text-zinc-400" />}
+                <div>
+                  <p className="text-sm font-semibold text-zinc-900">Suara kasir</p>
+                  <p className="text-xs text-zinc-500">Bunyi “beep” saat tambah menu & nada sukses saat bayar</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={soundOn}
+                onClick={() => { setSoundEnabled(!soundOn); if (!soundOn) setTimeout(playSuccess, 30) }}
+                data-testid="settings-sound-switch"
+                className={`relative w-11 h-6 rounded-full transition-colors duration-200 shrink-0 ${soundOn ? 'bg-emerald-500' : 'bg-zinc-300'}`}
+              >
+                <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 ${soundOn ? 'translate-x-5' : ''}`} />
+              </button>
+            </div>
+          </Card>
+
+          <div className="sticky bottom-[calc(var(--bnav)+12px)] lg:bottom-4 z-20 flex justify-end">
+            <Button onClick={saveSettings} loading={saving} icon={Save} size="lg" data-testid="settings-save-button" className="w-full sm:w-auto">
+              Simpan Pengaturan
+            </Button>
+          </div>
+        </div>
+
+        {/* Live receipt preview */}
+        <div className="lg:sticky lg:top-24 space-y-3" data-testid="settings-receipt-preview">
+          <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-zinc-500 flex items-center gap-1.5"><Eye className="w-3.5 h-3.5" /> Pratinjau Struk</p>
+          <div className="p-4 rounded-3xl bg-zinc-100 border border-zinc-200">
+            <ReceiptView order={sampleOrder} items={sampleItems} settings={settings} showSync={false} />
+          </div>
+          <p className="text-xs text-zinc-500">Berubah langsung saat Anda mengetik.</p>
         </div>
       </div>
     </div>

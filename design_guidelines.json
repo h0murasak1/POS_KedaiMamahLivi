@@ -1,0 +1,263 @@
+{
+    "theme_strategy": {
+        "concept": "Warm Sambal Modernism (Indonesian Warung Contemporary POS)",
+        "description": "An appetite-stimulating, warm yet razor-sharp modern F&B POS palette designed for Kedai Mamah Livi. It moves away from generic harsh magenta/bubblegum pink to an artisanal Indonesian culinary palette: rich Sambal Red/Terracotta-Orange (#EA580C to #E11D48), warm Golden Turmeric (#F59E0B), fresh Pandan Leaf Green (#10B981) for success/online, and a warm stone background (#FAF9F6 / #F3F4F6) with deep charcoal-espresso (#18181B / #0F172A) high-contrast text.",
+        "theme_mode": "light_first_with_dark_ready_tokens",
+        "locale": "id-ID (Rupiah 'Rp', 24-jam format WIB, Bahasa Indonesia natural warung phrasing)"
+    },
+    "colors": {
+        "surfaces": [
+            {
+                "name": "page",
+                "kind": "solid",
+                "bg": "#FAF9F6",
+                "on_bg": "#18181B",
+                "on_bg_muted": "#52525B",
+                "roles": {
+                    "border": "#E4E4E7",
+                    "brand_heading": "#C2410C",
+                    "danger": "#DC2626",
+                    "success": "#059669"
+                }
+            },
+            {
+                "name": "card",
+                "kind": "solid",
+                "bg": "#FFFFFF",
+                "on_bg": "#18181B",
+                "on_bg_muted": "#52525B",
+                "roles": {
+                    "border": "#F4F4F5",
+                    "hover_border": "#FED7AA",
+                    "badge_bg": "#FFEDD5",
+                    "badge_text": "#9A3412",
+                    "price_highlight": "#EA580C"
+                }
+            },
+            {
+                "name": "sidebar_and_bottom_nav",
+                "kind": "solid",
+                "bg": "#FFFFFF",
+                "on_bg": "#18181B",
+                "on_bg_muted": "#71717A",
+                "roles": {
+                    "active_item_bg": "#FFF7ED",
+                    "active_item_text": "#C2410C",
+                    "active_indicator": "#EA580C",
+                    "border": "#E4E4E7"
+                }
+            },
+            {
+                "name": "cart_panel",
+                "kind": "solid",
+                "bg": "#FFFFFF",
+                "on_bg": "#18181B",
+                "on_bg_muted": "#52525B",
+                "roles": {
+                    "border": "#E4E4E7",
+                    "item_row_hover": "#FFF7ED",
+                    "stepper_bg": "#F4F4F5",
+                    "stepper_active": "#EA580C",
+                    "total_banner_bg": "#FFF7ED",
+                    "total_banner_text": "#9A3412"
+                }
+            },
+            {
+                "name": "modal_surface",
+                "kind": "solid",
+                "bg": "#FFFFFF",
+                "on_bg": "#18181B",
+                "on_bg_muted": "#52525B",
+                "roles": {
+                    "header_border": "#F4F4F5",
+                    "keypad_btn_bg": "#F4F4F5",
+                    "keypad_btn_text": "#18181B",
+                    "keypad_btn_active": "#FED7AA",
+                    "summary_bg": "#F8FAFC",
+                    "qris_container_bg": "#FFFFFF"
+                }
+            },
+            {
+                "name": "inverse_dark_panel",
+                "kind": "solid",
+                "bg": "#18181B",
+                "on_bg": "#FAFAFA",
+                "on_bg_muted": "#A1A1AA",
+                "roles": {
+                    "accent_highlight": "#FB923C",
+                    "border": "#27272A"
+                }
+            },
+            {
+                "name": "toast_and_banner_offline",
+                "kind": "solid",
+                "bg": "#FEF3C7",
+                "on_bg": "#78350F",
+                "on_bg_muted": "#92400E",
+                "roles": {
+                    "badge": "#F59E0B"
+                }
+            },
+            {
+                "name": "toast_and_banner_online",
+                "kind": "solid",
+                "bg": "#ECFDF5",
+                "on_bg": "#064E3B",
+                "on_bg_muted": "#047857",
+                "roles": {
+                    "badge": "#10B981"
+                }
+            }
+        ],
+        "accent": "#EA580C",
+        "on_accent": "#FFFFFF",
+        "accent_hover": "#C2410C",
+        "accent_subtle": "#FFF7ED",
+        "semantic": {
+            "success": "#10B981",
+            "warning": "#F59E0B",
+            "danger": "#EF4444",
+            "info": "#0284C7"
+        }
+    },
+    "typography": {
+        "font_family_heading": "'Outfit Variable', sans-serif",
+        "font_family_body": "'Plus Jakarta Sans Variable', sans-serif",
+        "font_family_mono": "'JetBrains Mono Variable', monospace",
+        "font_packages_required": [
+            "@fontsource-variable/outfit",
+            "@fontsource-variable/plus-jakarta-sans",
+            "@fontsource-variable/jetbrains-mono"
+        ],
+        "scale_px": {
+            "display": 48,
+            "h1": 36,
+            "h2": 28,
+            "h3": 20,
+            "h4": 18,
+            "body": 16,
+            "caption": 14
+        },
+        "rules": {
+            "headings": "font-heading font-bold tracking-tight text-zinc-900",
+            "subheadings": "font-sans font-medium text-zinc-600",
+            "body": "font-sans text-base text-zinc-800 leading-relaxed",
+            "currency_numbers": "font-mono font-semibold tracking-tight tabular-nums",
+            "labels": "font-sans uppercase text-xs font-bold tracking-wider text-zinc-500"
+        }
+    },
+    "entry_surfaces": {
+        "/": "warm split hero & role portal — brand identity + live status banner top, quick POS launch button and role switchers (Kasir / Pemilik)",
+        "/login": "warm branded split login — Mamah Livi illustration & positioning left, high-contrast credential form right"
+    },
+    "layout_and_responsive_architecture": {
+        "desktop": {
+            "sidebar": "Fixed 240px left navigation with brand logo, live connection pill, navigation list, user profile + quick logout",
+            "pos_view": "Two-column split: Left 65% product grid with sticky category filter pill bar and search input; Right 35% fixed height interactive cart drawer with summary, discount, customer note, and prominent 'Bayar' button",
+            "dashboard_view": "Full fluid main container with 4 KPI summary cards, hourly transaction bar chart, and top 5 best seller items table"
+        },
+        "tablet": {
+            "sidebar": "Collapsible slim rail (72px) with icons and tooltips, expanding on hover/toggle",
+            "pos_view": "Two-column compact split or slide-over sheet for cart with floating cart counter pill"
+        },
+        "mobile": {
+            "sidebar": "Hidden — replaced by ergonomic bottom navigation bar (Beranda, Kasir POS, Riwayat, Menu/Pengaturan)",
+            "pos_view": "Single column product feed with horizontal scroll category chips, top search bar with barcode scanner icon, and bottom floating 'Keranjang (X Item) • Rp XX.XXX' sticky action bar opening a bottom drawer cart sheet",
+            "touch_targets": "Minimum 48px x 48px touch bounding box on all buttons, steppers, and list items"
+        }
+    },
+    "pos_interaction_and_motion_specs": {
+        "add_to_cart_microinteraction": {
+            "description": "Card pops slightly (scale 0.96 -> 1.02 -> 1) with green check badge flash; cart badge counter bumps with spring animation",
+            "css_transition": "transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1)"
+        },
+        "cash_payment_keypad": {
+            "quick_cash_buttons": [
+                "Uang Pas",
+                "Rp 10.000",
+                "Rp 20.000",
+                "Rp 50.000",
+                "Rp 100.000"
+            ],
+            "interactive_calculator": "Numeric 3x4 grid for instant touch input with realtime 'Kembalian' (change) calculation and bold green indicator when cash >= total"
+        },
+        "audio_feedback": {
+            "beep_sound": "Optional Web Audio API synthesized soft 880Hz pleasant ping on barcode scan or item add (toggleable in Settings)",
+            "success_chime": "Pleasant two-tone chord on payment success"
+        },
+        "success_celebration": {
+            "payment_success": "Confetti blast + smooth receipt preview modal with 1-click thermal print (window.print() with 58mm/80mm receipt stylesheet) + WhatsApp share receipt button"
+        },
+        "offline_and_sync_indicator": {
+            "pulse_dot": "Pulsing green dot for Online & Synced, Amber for 'Offline Mode (Tersimpan Lokal di Dexie)', Orange spin badge when syncing"
+        },
+        "keyboard_shortcuts_desktop": {
+            "f2_or_slash": "Focus search box",
+            "f4_or_space": "Open payment modal (Bayar)",
+            "escape": "Close modal / cancel search",
+            "c": "Clear cart (with confirmation)"
+        }
+    },
+    "custom_components_styling_spec": {
+        "Button": {
+            "variants": {
+                "primary": "bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white font-semibold shadow-sm hover:shadow active:scale-95 transition-all rounded-xl min-h-[44px]",
+                "secondary": "bg-white border border-zinc-200 hover:bg-orange-50 hover:border-orange-300 text-zinc-800 font-medium rounded-xl min-h-[44px]",
+                "danger": "bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-semibold rounded-xl min-h-[44px]",
+                "ghost": "hover:bg-zinc-100 text-zinc-600 hover:text-zinc-900 rounded-xl min-h-[44px]"
+            }
+        },
+        "Card": {
+            "base": "bg-white border border-zinc-100 rounded-2xl shadow-sm hover:shadow-md transition-shadow p-4 sm:p-5 relative overflow-hidden"
+        },
+        "Modal": {
+            "backdrop": "fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4",
+            "container": "bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+        },
+        "Input": {
+            "base": "w-full bg-zinc-50 border border-zinc-200 focus:bg-white focus:border-orange-500 focus:ring-2 focus:ring-orange-200 rounded-xl px-4 py-2.5 text-zinc-900 placeholder:text-zinc-400 transition-all text-base"
+        },
+        "Badge": {
+            "success": "bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full text-xs font-semibold",
+            "warning": "bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-0.5 rounded-full text-xs font-semibold",
+            "danger": "bg-rose-50 text-rose-700 border border-rose-200 px-2.5 py-0.5 rounded-full text-xs font-semibold",
+            "brand": "bg-orange-50 text-orange-700 border border-orange-200 px-2.5 py-0.5 rounded-full text-xs font-semibold"
+        }
+    },
+    "image_urls": [
+        {
+            "category": "hero_and_menu_thumbnails",
+            "search_term": "indonesian food street food nasi goreng",
+            "description": "Authentic Indonesian culinary dish - Nasi Goreng Spesial Telur",
+            "url": "https://images.unsplash.com/photo-1611506168759-1e69a83b5a53?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxODd8MHwxfHNlYXJjaHwyfHxpbmRvbmVzaWFuJTIwZm9vZCUyMHN0cmVldCUyMGZvb2QlMjBuYXNpJTIwZ29yZW5nfGVufDB8fHx8MTc5MzI5OTI1NXww&ixlib=rb-4.1.0&q=85",
+            "usage": "Default product image or menu hero banner for Kedai Mamah Livi"
+        },
+        {
+            "category": "menu_thumbnails",
+            "search_term": "indonesian street food banquet",
+            "description": "Indonesian feast with banana leaf presentation",
+            "url": "https://images.unsplash.com/photo-1658218615127-40b7068bbae5?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxODd8MHwxfHNlYXJjaHwxfHxpbmRvbmVzaWFuJTIwZm9vZCUyMHN0cmVldCUyMGZvb2QlMjBuYXNpJTIwZ29yZW5nfGVufDB8fHx8MTc5MzI5OTI1NXww&ixlib=rb-4.1.0&q=85",
+            "usage": "Category banner for Paket Komplit / Makanan Berat"
+        },
+        {
+            "category": "menu_thumbnails",
+            "search_term": "indonesian noodle mie goreng",
+            "description": "Mie Goreng and traditional kerupuk condiments",
+            "url": "https://images.unsplash.com/photo-1661830948845-1eb54cd9e1fd?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxODd8MHwxfHNlYXJjaHwzfHxpbmRvbmVzaWFuJTIwZm9vZCUyMHN0cmVldCUyMGZvb2QlMjBuYXNpJTIwZ29yZW5nfGVufDB8fHx8MTc5MzI5OTI1NXww&ixlib=rb-4.1.0&q=85",
+            "usage": "Product card thumbnail for Mie Goreng / Bakmi Livi"
+        }
+    ],
+    "accessibility_and_testing": {
+        "wcag_compliance": "All body texts adhere strictly to APCA / WCAG AA 4.5:1 ratio over card and page surfaces",
+        "data_testid_convention": "All interactive elements (buttons, inputs, filters, stepper +, stepper -, pay triggers, receipt buttons, cancel requests) must provide kebab-case testids: e.g. data-testid='pos-product-card-1', data-testid='cart-item-qty-inc', data-testid='btn-checkout', data-testid='payment-modal-cash-submit'"
+    },
+    "instructions_to_main_agent": [
+        "Upgrade index.css with @theme tokens replacing generic harsh pink with warm culinary terracotta/orange (#EA580C) and amber (#F59E0B) as primary.",
+        "Import @fontsource-variable/outfit, @fontsource-variable/plus-jakarta-sans, and @fontsource-variable/jetbrains-mono in index.css for elite typography.",
+        "Ensure all pages (Login, POS, Owner Dashboard, Cashier Dashboard, Riwayat Transaksi, Menu Management, Kasir Management, Laporan, Pengaturan, Audit Log) use modern card containers, responsive layouts, and unified touch-friendly buttons.",
+        "Include quick numeric keypad in payment modal with instant 'Kembalian' calculation and quick nominal buttons (Uang Pas, 10k, 20k, 50k, 100k).",
+        "Implement bottom navigation bar on mobile viewports and floating sticky cart summary pill for effortless phone use in fast-paced warung service.",
+        "Add animated celebration + clear printable receipt modal on transaction completion.",
+        "Ensure Dexie offline status bar is clearly visible with pulsing indicator."
+    ]
+}

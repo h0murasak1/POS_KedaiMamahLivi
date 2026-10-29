@@ -1,17 +1,22 @@
-export default function EmptyState({ icon: Icon, title, description, action }) {
+export default function EmptyState({ icon: Icon, title, description, action, compact = false }) {
   return (
-    <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+    <div
+      data-testid="empty-state"
+      className={`flex flex-col items-center justify-center text-center px-4 rounded-3xl border border-dashed border-zinc-200 bg-white/60 animate-fade-in-up ${compact ? 'py-10' : 'py-16'}`}
+    >
       {Icon && (
-        <div className="w-16 h-16 bg-primary-50 ring-8 ring-pink-50/60 rounded-2xl flex items-center justify-center mb-4 text-primary-500 shadow-xs">
-          <Icon className="w-8 h-8" />
+        <div className="relative mb-5">
+          <div className="absolute inset-0 rounded-3xl bg-primary-200/50 blur-xl" />
+          <div className="relative w-16 h-16 bg-gradient-to-br from-primary-50 to-primary-100 rounded-3xl flex items-center justify-center text-primary-600 border border-primary-200/60 rotate-[-6deg]">
+            <Icon className="w-7 h-7 rotate-[6deg]" />
+          </div>
         </div>
       )}
-      <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-1">{title}</h3>
+      <h3 className="text-base sm:text-lg font-bold text-zinc-900 mb-1">{title}</h3>
       {description && (
-        <p className="text-xs sm:text-sm text-gray-500 max-w-sm mb-4 leading-relaxed">{description}</p>
+        <p className="text-sm text-zinc-500 max-w-sm mb-5 leading-relaxed">{description}</p>
       )}
       {action && action}
     </div>
   )
 }
-

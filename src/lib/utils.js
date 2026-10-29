@@ -78,3 +78,12 @@ export const paymentMethodLabels = {
 
 // Clamp number
 export const clamp = (num, min, max) => Math.min(Math.max(num, min), max)
+
+// Friendly greeting by local time of day
+export const getGreeting = (date = new Date()) => {
+  const h = date.getHours()
+  if (h < 11) return 'Selamat pagi'
+  if (h < 15) return 'Selamat siang'
+  if (h < 18) return 'Selamat sore'
+  return 'Selamat malam'
+}

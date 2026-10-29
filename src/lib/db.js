@@ -7,17 +7,17 @@ db.version(1).stores({
   cached_categories: 'id, name, sort_order',
   cached_products: 'id, category_id, name, price, is_available',
   cached_variants: 'id, product_id, name, price_addition',
-  
+
   // Pengaturan lokal
   cached_settings: 'key',
-  
+
   // Transaksi lokal
   local_orders: 'id, cashier_id, device_id, created_at_local, sync_status, order_status',
   local_order_items: 'id, order_id, product_id',
-  
+
   // Antrean sinkronisasi
   sync_queue: 'id, order_id, status, created_at, last_attempt',
-  
+
   // Metadata sinkronisasi
   sync_metadata: 'key'
 })

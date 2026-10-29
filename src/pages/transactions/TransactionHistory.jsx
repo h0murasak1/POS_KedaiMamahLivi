@@ -3,30 +3,25 @@ import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { db } from '@/lib/db'
 import Header from '@/components/layout/Header'
-import Card from '@/components/ui/Card'
 import Badge from '@/components/ui/Badge'
 import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
 import EmptyState from '@/components/ui/EmptyState'
-import { formatRupiah, formatDateTime, syncStatusLabels, paymentMethodLabels } from '@/lib/utils'
+import { fieldClass, FieldLabel } from '@/components/ui/Input'
+import NumericKeypad from '@/components/pos/NumericKeypad'
+import ReceiptView from '@/components/pos/ReceiptView'
+import { useStoreSettings } from '@/lib/useStoreSettings'
+import { formatRupiah, formatDate, formatDateTime, paymentMethodLabels } from '@/lib/utils'
+import { format, isToday, isYesterday } from 'date-fns'
 import {
-  Receipt,
-  Search,
-  Calendar,
-  Printer,
-  AlertTriangle,
-  XCircle,
-  CheckCircle,
-  KeyRound,
-  Send,
-  ShieldAlert,
-  Clock,
-  Filter,
+  Receipt, Search, Calendar, Printer, AlertTriangle, XCircle, CheckCircle, KeyRound, Send,
+  ShieldAlert, Clock, RotateCcw, ChevronRight, CloudOff,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 export default function TransactionHistory() {
-  const { isOwner, user, profile } = useAuth()
+  const { isOwner, user } = useAuth()
+  const storeSettings = useStoreSettings()
   const [transactions, setTransactions] = useState([])
   const [localTransactions, setLocalTransactions] = useState([])
   const [loading, setLoading] = useState(true)
@@ -330,182 +325,169 @@ export default function TransactionHistory() {
     }
   }
 
+  const QUICK_REASONS = ['Salah input menu', 'Pelanggan batal pesan', 'Pembayaran gagal', 'Pesanan dobel']
+
+  const sorted = [...filtered].sort((a, b) => new Date(b.created_at_local) - new Date(a.created_at_local))
+  const groups = sorted.reduce((acc, t) => {
+    const d = new Date(t.created_at_local)
+    const label = isToday(d) ? 'Hari ini' : isYesterday(d) ? 'Kemarin' : formatDate(t.created_at_local)
+    if (!acc.length || acc[acc.length - 1].label !== label) acc.push({ label, items: [] })
+    acc[acc.length - 1].items.push(t)
+    return acc
+  }, [])
+
+  const completedList = filtered.filter((t) => t.order_status === 'completed')
+  const completedTotal = completedList.reduce((s, t) => s + (Number(t.total_amount) || 0), 0)
+
+  const tabs = [
+    { id: 'all', label: 'Semua' },
+    { id: 'completed', label: 'Selesai' },
+    { id: 'requested', label: 'Perlu Izin', count: pendingRequestsCount },
+    { id: 'cancelled', label: 'Dibatalkan' },
+  ]
+
+  const statusOf = (t) =>
+    t.order_status === 'cancelled'
+      ? { label: 'Dibatalkan', variant: 'danger', icon: XCircle, tone: 'bg-red-50 text-red-600' }
+      : t.cancellation_status === 'requested'
+        ? { label: 'Perlu Izin', variant: 'warning', icon: Clock, tone: 'bg-amber-50 text-amber-600' }
+        : { label: 'Selesai', variant: 'success', icon: CheckCircle, tone: 'bg-emerald-50 text-emerald-600' }
+
   return (
     <div>
-      <Header title="Riwayat Transaksi" />
-      <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
-        {/* Banner Alert for Pending Cancellation Requests */}
+      <Header title="Riwayat Transaksi" subtitle={isOwner ? 'Semua transaksi kedai' : 'Transaksi yang Anda proses'} />
+      <div className="p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-5 max-w-[1200px] w-full">
         {pendingRequestsCount > 0 && (
-          <div className="p-4 bg-gradient-to-r from-pink-50 via-rose-50 to-amber-50 border border-pink-200 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-3xl bg-amber-50 border border-amber-200 animate-fade-in-up" data-testid="tx-pending-requests-banner">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-pink-100 flex items-center justify-center shrink-0">
-                <AlertTriangle className="w-5 h-5 text-primary-600" />
+              <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-sm font-bold text-gray-900">
-                  {pendingRequestsCount} Transaksi Menunggu Persetujuan Pembatalan
-                </p>
-                <p className="text-xs text-gray-600 mt-0.5">
-                  {isOwner
-                    ? 'Kasir mengajukan pembatalan transaksi. Mohon tinjau dan setujui atau tolak.'
-                    : 'Permintaan pembatalan transaksi Anda sedang menunggu persetujuan dari Owner.'}
+                <p className="text-sm font-bold text-amber-950">{pendingRequestsCount} transaksi menunggu persetujuan pembatalan</p>
+                <p className="text-xs text-amber-800 mt-0.5">
+                  {isOwner ? 'Tinjau lalu setujui atau tolak pengajuan kasir.' : 'Pengajuan Anda sedang menunggu keputusan Owner.'}
                 </p>
               </div>
             </div>
-            <button
-              onClick={() => setStatusTab('requested')}
-              className="px-4 py-2 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 active:scale-95 text-white text-xs font-bold rounded-xl transition-all shadow-sm shadow-pink-200 whitespace-nowrap self-end sm:self-auto cursor-pointer"
-            >
-              Lihat Permintaan
-            </button>
+            <Button variant="dark" size="sm" onClick={() => setStatusTab('requested')} data-testid="tx-view-requests-button" className="self-end sm:self-auto">
+              Lihat pengajuan
+            </Button>
           </div>
         )}
 
-        {/* Filter Controls */}
-        <div className="flex flex-col sm:flex-row gap-3">
+        {/* Summary strip */}
+        <div className="grid grid-cols-3 gap-2.5 sm:gap-4">
+          {[
+            { label: 'Transaksi', value: filtered.length, id: 'count' },
+            { label: 'Omzet selesai', value: formatRupiah(completedTotal), mono: true, id: 'total' },
+            { label: 'Perlu izin', value: pendingRequestsCount, id: 'requested', warn: pendingRequestsCount > 0 },
+          ].map((s) => (
+            <div key={s.id} className="p-3 sm:p-4 rounded-2xl bg-white border border-zinc-200/80" data-testid={`tx-summary-${s.id}`}>
+              <p className="text-[11px] sm:text-xs font-semibold text-zinc-500">{s.label}</p>
+              <p className={`mt-1 font-bold tracking-tight truncate ${s.mono ? 'font-mono text-sm sm:text-xl' : 'font-heading text-lg sm:text-2xl'} ${s.warn ? 'text-amber-600' : 'text-zinc-900'}`}>{s.value}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Filters */}
+        <div className="flex flex-col md:flex-row gap-2.5">
           <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" />
             <input
               type="text"
-              placeholder="Cari nomor transaksi / kasir..."
+              placeholder="Cari nomor transaksi atau nama kasir…"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 text-sm sm:text-base border border-pink-200/80 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-400 bg-white shadow-2xs transition-all"
+              data-testid="tx-search-input"
+              className={`${fieldClass} pl-10 bg-white`}
             />
           </div>
           <div className="flex gap-2">
-            <div className="relative">
-              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <div className="relative flex-1 md:flex-none">
+              <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" />
               <input
                 type="date"
                 value={dateFilter}
                 onChange={(e) => setDateFilter(e.target.value)}
-                className="pl-9 pr-3 py-2.5 text-xs sm:text-sm border border-pink-200/80 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-400 bg-white shadow-2xs transition-all"
+                data-testid="tx-date-filter"
+                className={`${fieldClass} pl-10 bg-white md:w-48`}
               />
             </div>
             {dateFilter && (
-              <Button variant="ghost" size="sm" onClick={() => setDateFilter('')} className="hover:bg-pink-50 hover:text-primary-600">
-                Reset
-              </Button>
+              <Button variant="secondary" onClick={() => setDateFilter('')} icon={RotateCcw} data-testid="tx-date-reset-button">Reset</Button>
             )}
           </div>
         </div>
 
-        {/* Status Filter Tabs */}
-        <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-          {[
-            { id: 'all', label: 'Semua Transaksi' },
-            { id: 'completed', label: 'Selesai' },
-            {
-              id: 'requested',
-              label: `Perlu Izin (${pendingRequestsCount})`,
-              badge: pendingRequestsCount > 0,
-            },
-            { id: 'cancelled', label: 'Dibatalkan' },
-          ].map((tab) => (
+        <div className="flex gap-1 p-1 bg-zinc-100 rounded-2xl w-full sm:w-fit overflow-x-auto no-scrollbar" data-testid="tx-status-tabs">
+          {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setStatusTab(tab.id)}
-              className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
-                statusTab === tab.id
-                  ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-sm shadow-pink-200 scale-102'
-                  : 'bg-white/80 border border-pink-100/80 text-gray-600 hover:bg-pink-50 hover:text-primary-600'
-              }`}
+              data-testid={`tx-tab-${tab.id}`}
+              className={`flex-1 sm:flex-none shrink-0 h-9 px-4 rounded-xl text-sm font-semibold whitespace-nowrap flex items-center justify-center gap-1.5 transition-[background-color,color,box-shadow] ${statusTab === tab.id ? 'bg-white text-zinc-900 shadow-[0_1px_3px_rgba(24,24,27,0.12)]' : 'text-zinc-500 hover:text-zinc-800'
+                }`}
             >
-              <span>{tab.label}</span>
-              {tab.badge && (
-                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-              )}
+              {tab.label}
+              {tab.count > 0 && <span className="min-w-5 h-5 px-1 rounded-full bg-amber-500 text-white text-[10px] font-bold flex items-center justify-center">{tab.count}</span>}
             </button>
           ))}
         </div>
 
-        {/* Transaction List */}
+        {/* List */}
         {loading ? (
-          <div className="text-center py-16 text-gray-400 text-sm">Memuat transaksi...</div>
-        ) : filtered.length === 0 ? (
-          <EmptyState
-            icon={Receipt}
-            title="Tidak ada transaksi"
-            description="Tidak ada transaksi yang cocok dengan filter yang dipilih."
-          />
+          <div className="space-y-2.5">{[0, 1, 2, 3, 4].map((i) => <div key={i} className="h-[76px] animate-shimmer rounded-2xl" />)}</div>
+        ) : sorted.length === 0 ? (
+          <EmptyState icon={Receipt} title="Tidak ada transaksi" description="Belum ada transaksi yang cocok dengan filter yang dipilih." />
         ) : (
-          <div className="space-y-3">
-            {filtered.map((t) => (
-              <Card
-                key={t.id}
-                className={`cursor-pointer hover:border-pink-300 card-glow transition-all p-4 ${
-                  t.cancellation_status === 'requested'
-                    ? 'border-amber-300 bg-amber-50/20'
-                    : t.order_status === 'cancelled'
-                    ? 'border-red-200 bg-red-50/10'
-                    : ''
-                }`}
-                onClick={() => viewDetail(t, t._isLocal)}
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3.5 min-w-0">
-                    <div
-                      className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${
-                        t.order_status === 'cancelled'
-                          ? 'bg-red-50 text-red-600'
-                          : t.cancellation_status === 'requested'
-                          ? 'bg-amber-50 text-amber-600'
-                          : 'bg-primary-50 text-primary-600 shadow-2xs'
-                      }`}
-                    >
-                      {t.order_status === 'cancelled' ? (
-                        <XCircle className="w-6 h-6" />
-                      ) : t.cancellation_status === 'requested' ? (
-                        <Clock className="w-6 h-6" />
-                      ) : (
-                        <Receipt className="w-6 h-6" />
-                      )}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-bold text-gray-900 truncate">{t.order_number}</p>
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        {formatDateTime(t.created_at_local)} • {t.cashier_name || 'Kasir'}
-                      </p>
-                      {t.cancellation_status === 'requested' && (
-                        <p className="text-xs font-semibold text-amber-700 mt-1 flex items-center gap-1">
-                          <AlertTriangle className="w-3.5 h-3.5" />
-                          <span>Menunggu persetujuan pembatalan</span>
-                        </p>
-                      )}
-                      {t.order_status === 'cancelled' && (
-                        <p className="text-xs text-red-600 mt-1 truncate">
-                          Alasan: {t.cancellation_reason || 'Dibatalkan'}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="text-right shrink-0">
-                    <p
-                      className={`font-extrabold text-base ${
-                        t.order_status === 'cancelled'
-                          ? 'line-through text-gray-400'
-                          : 'text-primary-600'
-                      }`}
-                    >
-                      {formatRupiah(t.total_amount)}
-                    </p>
-                    <div className="flex items-center justify-end gap-1.5 mt-1.5 flex-wrap">
-                      {t.order_status === 'cancelled' ? (
-                        <Badge variant="danger">Dibatalkan</Badge>
-                      ) : t.cancellation_status === 'requested' ? (
-                        <Badge variant="warning">Perlu Izin</Badge>
-                      ) : (
-                        <Badge variant="success">Selesai</Badge>
-                      )}
-                      <span className="text-[10px] px-2 py-0.5 bg-pink-50 border border-pink-100 rounded-md font-semibold text-pink-700 uppercase">
-                        {t.payment_method}
-                      </span>
-                    </div>
-                  </div>
+          <div className="space-y-5" data-testid="tx-list">
+            {groups.map((g) => (
+              <div key={g.label}>
+                <div className="flex items-center gap-3 mb-2 px-1">
+                  <p className="text-xs font-bold uppercase tracking-[0.1em] text-zinc-500">{g.label}</p>
+                  <span className="flex-1 h-px bg-zinc-200" />
+                  <span className="text-[11px] font-semibold text-zinc-400">{g.items.length} transaksi</span>
                 </div>
-              </Card>
+                <div className="bg-white rounded-2xl border border-zinc-200/80 divide-y divide-zinc-100 overflow-hidden stagger">
+                  {g.items.map((t) => {
+                    const st = statusOf(t)
+                    return (
+                      <button
+                        key={t.id}
+                        onClick={() => viewDetail(t, t._isLocal)}
+                        data-testid={`tx-row-${t.id}`}
+                        className={`group w-full flex items-center gap-3 sm:gap-4 px-3.5 sm:px-5 py-3.5 text-left hover:bg-primary-50/40 transition-colors ${t.cancellation_status === 'requested' ? 'bg-amber-50/40' : ''}`}
+                      >
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${st.tone}`}>
+                          <st.icon className="w-5 h-5" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-mono text-[13px] font-semibold text-zinc-900 truncate">{t.order_number}</p>
+                          <p className="text-xs text-zinc-500 mt-0.5 truncate">
+                            {format(new Date(t.created_at_local), 'HH:mm')} · {t.cashier_name || 'Kasir'} · {paymentMethodLabels[t.payment_method] || t.payment_method}
+                          </p>
+                          {t.order_status === 'cancelled' && t.cancellation_reason && (
+                            <p className="text-[11px] text-red-600 mt-0.5 truncate">Alasan: {t.cancellation_reason}</p>
+                          )}
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className={`font-mono text-sm sm:text-base font-semibold tabular ${t.order_status === 'cancelled' ? 'line-through text-zinc-400' : 'text-zinc-900'}`}>
+                            {formatRupiah(t.total_amount)}
+                          </p>
+                          <div className="flex items-center justify-end gap-1 mt-1">
+                            {t.sync_status && t.sync_status !== 'synced' && t._isLocal && (
+                              <span title="Belum tersinkron" className="w-5 h-5 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center"><CloudOff className="w-3 h-3" /></span>
+                            )}
+                            <Badge variant={st.variant}>{st.label}</Badge>
+                          </div>
+                        </div>
+                        <ChevronRight className="hidden sm:block w-4 h-4 text-zinc-300 group-hover:text-primary-600 group-hover:translate-x-0.5 transition-[color,transform]" />
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
             ))}
           </div>
         )}
@@ -515,335 +497,194 @@ export default function TransactionHistory() {
           isOpen={!!selected && !cancelModalOpen && !rejectModalOpen}
           onClose={() => setSelected(null)}
           title="Detail Transaksi"
+          subtitle={selected ? formatDateTime(selected.created_at_local) : ''}
+          icon={Receipt}
           size="md"
+          testId="tx-detail-modal"
           footer={
             selected && (
               <div className="w-full flex flex-col gap-2">
-                {/* Actions for Requested Cancellation */}
                 {selected.cancellation_status === 'requested' && (
-                  <>
-                    {isOwner ? (
-                      <div className="grid grid-cols-2 gap-2">
-                        <Button
-                          variant="danger"
-                          className="w-full"
-                          onClick={() => setRejectModalOpen(true)}
-                          icon={XCircle}
-                        >
-                          Tolak
-                        </Button>
-                        <Button
-                          variant="primary"
-                          className="w-full bg-green-600 hover:bg-green-700 text-white"
-                          onClick={() => handleApproveCancellation(selected.id)}
-                          icon={CheckCircle}
-                        >
-                          Setujui Batal
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-center text-xs font-semibold text-amber-800">
-                        Permintaan pembatalan sedang menunggu konfirmasi dari Owner.
-                      </div>
-                    )}
-                  </>
+                  isOwner ? (
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button variant="danger-soft" onClick={() => setRejectModalOpen(true)} icon={XCircle} data-testid="tx-reject-cancel-button">Tolak</Button>
+                      <Button variant="success" onClick={() => handleApproveCancellation(selected.id)} icon={CheckCircle} data-testid="tx-approve-cancel-button">Setujui Batal</Button>
+                    </div>
+                  ) : (
+                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-center text-xs font-semibold text-amber-800">
+                      Pengajuan pembatalan sedang menunggu keputusan Owner.
+                    </div>
+                  )
                 )}
-
-                {/* Action for Active Completed Order: Cancellation Button */}
-                {selected.order_status === 'completed' &&
-                  selected.cancellation_status !== 'requested' && (
-                    <Button
-                      variant="outline"
-                      className="w-full border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 font-semibold"
-                      onClick={() => openCancelDialog(selected)}
-                      icon={XCircle}
-                    >
-                      {isOwner ? 'Batalkan Transaksi' : 'Batalkan Transaksi (Izin Owner)'}
+                <div className="grid grid-cols-2 gap-2">
+                  <Button variant="secondary" onClick={() => window.print()} icon={Printer} data-testid="tx-print-button" className={selected.order_status === 'completed' && selected.cancellation_status !== 'requested' ? '' : 'col-span-2'}>
+                    Cetak Struk
+                  </Button>
+                  {selected.order_status === 'completed' && selected.cancellation_status !== 'requested' && (
+                    <Button variant="danger-soft" onClick={() => openCancelDialog(selected)} icon={XCircle} data-testid="tx-open-cancel-button">
+                      Batalkan
                     </Button>
                   )}
-
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => window.print()}
-                  icon={Printer}
-                >
-                  Cetak Struk
-                </Button>
+                </div>
               </div>
             )
           }
         >
           {selected && (
             <div className="space-y-4">
-              {/* Status Alert in Detail */}
               {selected.order_status === 'cancelled' && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2.5 text-xs text-red-700">
+                <div className="p-3.5 bg-red-50 border border-red-200 rounded-2xl flex items-start gap-3 text-xs text-red-700" data-testid="tx-detail-cancelled-alert">
                   <XCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-bold">Transaksi Telah Dibatalkan</p>
+                    <p className="font-bold text-sm">Transaksi telah dibatalkan</p>
                     <p className="mt-0.5">Alasan: {selected.cancellation_reason || '-'}</p>
-                    {selected.cancellation_approved_at && (
-                      <p className="text-[11px] text-red-500 mt-0.5">
-                        Dibatalkan pada: {formatDateTime(selected.cancellation_approved_at)}
-                      </p>
-                    )}
+                    {selected.cancellation_approved_at && <p className="text-[11px] text-red-500 mt-0.5">Pada {formatDateTime(selected.cancellation_approved_at)}</p>}
                   </div>
                 </div>
               )}
-
               {selected.cancellation_status === 'requested' && (
-                <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2.5 text-xs text-amber-800">
+                <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-3 text-xs text-amber-800" data-testid="tx-detail-requested-alert">
                   <Clock className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-bold">Pengajuan Pembatalan Menunggu Persetujuan</p>
+                    <p className="font-bold text-sm">Pengajuan pembatalan menunggu persetujuan</p>
                     <p className="mt-0.5">Alasan: {selected.cancellation_reason || '-'}</p>
-                    <p className="text-[11px] text-amber-600 mt-0.5">
-                      Diajukan oleh: {selected.cancellation_requested_by_name || selected.cashier_name || 'Kasir'}
-                    </p>
+                    <p className="text-[11px] text-amber-600 mt-0.5">Diajukan oleh {selected.cancellation_requested_by_name || selected.cashier_name || 'Kasir'}</p>
                   </div>
                 </div>
               )}
-
-              <div className="grid grid-cols-2 gap-3 text-sm bg-gray-50 p-3.5 rounded-xl">
-                <div>
-                  <span className="text-xs text-gray-500">No. Transaksi</span>
-                  <p className="font-bold text-gray-900">{selected.order_number}</p>
-                </div>
-                <div>
-                  <span className="text-xs text-gray-500">Waktu</span>
-                  <p className="font-medium text-gray-900">{formatDateTime(selected.created_at_local)}</p>
-                </div>
-                <div>
-                  <span className="text-xs text-gray-500">Kasir</span>
-                  <p className="font-medium text-gray-900">{selected.cashier_name || 'Kasir'}</p>
-                </div>
-                <div>
-                  <span className="text-xs text-gray-500">Pembayaran</span>
-                  <p className="font-medium text-gray-900">
-                    {paymentMethodLabels[selected.payment_method] || selected.payment_method}
-                  </p>
-                </div>
-              </div>
-
-              {/* Items */}
-              <div className="border-t pt-3">
-                <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
-                  Daftar Pesanan
-                </h4>
-                <div className="space-y-1.5">
-                  {selectedItems.map((item) => (
-                    <div key={item.id} className="flex justify-between py-1 text-sm">
-                      <div className="pr-2">
-                        <span className="font-medium text-gray-900">{item.product_name}</span>
-                        {item.variant_name && (
-                          <span className="text-xs text-gray-500"> ({item.variant_name})</span>
-                        )}
-                        <span className="text-xs text-gray-400"> × {item.quantity}</span>
-                      </div>
-                      <span className="font-semibold text-gray-900 shrink-0">
-                        {formatRupiah(item.subtotal)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Totals */}
-              <div className="border-t pt-3 space-y-1.5 text-sm">
-                <div className="flex justify-between text-gray-600">
-                  <span>Subtotal</span>
-                  <span>{formatRupiah(selected.subtotal)}</span>
-                </div>
-                {selected.discount_amount > 0 && (
-                  <div className="flex justify-between text-green-600 font-medium">
-                    <span>Diskon</span>
-                    <span>-{formatRupiah(selected.discount_amount)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between font-extrabold text-base text-gray-900 pt-1 border-t">
-                  <span>Total Pembayaran</span>
-                  <span className={selected.order_status === 'cancelled' ? 'line-through text-gray-400' : 'text-primary-600'}>
-                    {formatRupiah(selected.total_amount)}
-                  </span>
-                </div>
-                {selected.cash_received && (
-                  <>
-                    <div className="flex justify-between text-xs text-gray-500">
-                      <span>Uang Tunai Diterima</span>
-                      <span>{formatRupiah(selected.cash_received)}</span>
-                    </div>
-                    <div className="flex justify-between text-xs text-gray-500">
-                      <span>Kembalian</span>
-                      <span>{formatRupiah(selected.change_amount)}</span>
-                    </div>
-                  </>
-                )}
-              </div>
+              <ReceiptView order={selected} items={selectedItems} settings={storeSettings} showSync={!!selected.isLocal} />
             </div>
           )}
         </Modal>
 
-        {/* Cancellation Action Modal (With Owner Permission) */}
+        {/* Cancellation Modal */}
         <Modal
           isOpen={cancelModalOpen}
           onClose={() => setCancelModalOpen(false)}
           title="Batalkan Transaksi"
+          subtitle={selected?.order_number}
+          icon={ShieldAlert}
           size="md"
+          testId="tx-cancel-modal"
           footer={
-            <div className="flex gap-2 w-full">
-              <Button
-                variant="outline"
-                className="w-1/2"
-                onClick={() => setCancelModalOpen(false)}
-                disabled={cancelling}
-              >
-                Batal
-              </Button>
-              <Button
-                variant="danger"
-                className="w-1/2 font-bold"
-                onClick={handleExecuteCancel}
-                loading={cancelling}
-                icon={cancelMode === 'request' ? Send : XCircle}
-              >
+            <div className="grid grid-cols-2 gap-2 w-full">
+              <Button variant="secondary" onClick={() => setCancelModalOpen(false)} disabled={cancelling} data-testid="tx-cancel-modal-back-button">Kembali</Button>
+              <Button variant="danger" onClick={handleExecuteCancel} loading={cancelling} icon={cancelMode === 'request' ? Send : XCircle} data-testid="tx-cancel-modal-confirm-button">
                 {cancelMode === 'request' ? 'Kirim Pengajuan' : 'Konfirmasi Batal'}
               </Button>
             </div>
           }
         >
-          <div className="space-y-4">
-            <div className="p-3 bg-red-50 rounded-xl border border-red-100 flex items-center gap-3">
-              <ShieldAlert className="w-8 h-8 text-red-600 shrink-0" />
+          <div className="space-y-5">
+            <div className="flex items-center justify-between p-4 rounded-2xl bg-zinc-900 text-white">
               <div>
-                <p className="text-xs text-red-600">Nomor Transaksi:</p>
-                <p className="text-base font-extrabold text-red-900">{selected?.order_number}</p>
-                <p className="text-xs text-red-700">Total: {formatRupiah(selected?.total_amount || 0)}</p>
+                <p className="text-[11px] text-white/60 font-semibold uppercase tracking-wider">Total transaksi</p>
+                <p className="font-mono text-2xl font-semibold tabular mt-0.5">{formatRupiah(selected?.total_amount || 0)}</p>
               </div>
+              <ShieldAlert className="w-9 h-9 text-primary-400" />
             </div>
 
-            {/* Mode Selector for Cashier */}
             {!isOwner && (
-              <div className="space-y-2">
-                <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                  Metode Otorisasi
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setCancelMode('pin')}
-                    className={`p-3 rounded-xl border text-left transition-colors ${
-                      cancelMode === 'pin'
-                        ? 'border-primary-500 bg-primary-50 text-primary-900 font-bold'
-                        : 'border-gray-200 hover:bg-gray-50 text-gray-700'
-                    }`}
-                  >
-                    <KeyRound className="w-5 h-5 mb-1 text-primary-600" />
-                    <p className="text-xs font-bold">PIN Owner di Tempat</p>
-                    <p className="text-[11px] font-normal text-gray-500 mt-0.5">
-                      Owner ada di kedai dan memasukkan PIN langsung
-                    </p>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setCancelMode('request')}
-                    className={`p-3 rounded-xl border text-left transition-colors ${
-                      cancelMode === 'request'
-                        ? 'border-primary-500 bg-primary-50 text-primary-900 font-bold'
-                        : 'border-gray-200 hover:bg-gray-50 text-gray-700'
-                    }`}
-                  >
-                    <Send className="w-5 h-5 mb-1 text-primary-600" />
-                    <p className="text-xs font-bold">Pengajuan Jarak Jauh</p>
-                    <p className="text-[11px] font-normal text-gray-500 mt-0.5">
-                      Kirim permintaan ke dashboard Owner
-                    </p>
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* If PIN mode: Input PIN */}
-            {cancelMode === 'pin' && (
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Masukkan PIN Otorisasi Owner
-                </label>
-                <div className="relative">
-                  <input
-                    type="password"
-                    maxLength={6}
-                    value={ownerPin}
-                    onChange={(e) => setOwnerPin(e.target.value.replace(/\D/g, ''))}
-                    placeholder="Masukkan 4-6 digit PIN"
-                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl font-mono text-center tracking-widest text-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    autoFocus
-                  />
-                  <KeyRound className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <FieldLabel>Metode Otorisasi</FieldLabel>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { id: 'pin', icon: KeyRound, title: 'PIN Owner', desc: 'Owner ada di kedai' },
+                    { id: 'request', icon: Send, title: 'Ajukan Jarak Jauh', desc: 'Kirim ke dashboard Owner' },
+                  ].map((m) => (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() => setCancelMode(m.id)}
+                      data-testid={`tx-cancel-mode-${m.id}`}
+                      className={`p-3.5 rounded-2xl border-2 text-left transition-[background-color,border-color] ${cancelMode === m.id ? 'border-primary-500 bg-primary-50' : 'border-zinc-200 hover:border-zinc-300'}`}
+                    >
+                      <m.icon className={`w-5 h-5 ${cancelMode === m.id ? 'text-primary-600' : 'text-zinc-500'}`} />
+                      <p className="text-sm font-bold text-zinc-900 mt-2">{m.title}</p>
+                      <p className="text-[11px] text-zinc-500 mt-0.5">{m.desc}</p>
+                    </button>
+                  ))}
                 </div>
-                <p className="text-[11px] text-gray-400 mt-1">
-                  Minta pemilik kedai untuk memasukkan PIN keamanan (default: 1234).
-                </p>
               </div>
             )}
 
-            {/* Alasan Pembatalan */}
+            {cancelMode === 'pin' && (
+              <div className="animate-fade-in-up">
+                <FieldLabel hint="4–6 digit">PIN Otorisasi Owner</FieldLabel>
+                <div className="flex justify-center gap-2.5 py-3" data-testid="tx-pin-dots">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <span
+                      key={i}
+                      className={`w-3.5 h-3.5 rounded-full transition-[background-color,transform] duration-150 ${i < ownerPin.length ? 'bg-primary-600 scale-110' : i < 4 ? 'bg-zinc-300' : 'bg-zinc-200'}`}
+                    />
+                  ))}
+                </div>
+                <input
+                  type="password"
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={ownerPin}
+                  onChange={(e) => setOwnerPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  placeholder="Ketik PIN atau gunakan tombol"
+                  data-testid="tx-owner-pin-input"
+                  className={`${fieldClass} text-center font-mono tracking-[0.5em] mb-2`}
+                />
+                <NumericKeypad value={ownerPin} onChange={setOwnerPin} maxLength={6} showTripleZero={false} testIdPrefix="tx-pin-keypad" />
+              </div>
+            )}
+
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">
-                Alasan Pembatalan <span className="text-red-500">*</span>
-              </label>
+              <FieldLabel>Alasan Pembatalan *</FieldLabel>
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {QUICK_REASONS.map((r) => (
+                  <button
+                    key={r}
+                    type="button"
+                    onClick={() => setCancelReason(r)}
+                    data-testid={`tx-quick-reason-${r.toLowerCase().replace(/\s+/g, '-')}`}
+                    className={`h-8 px-3 rounded-full text-xs font-semibold border transition-colors ${cancelReason === r ? 'bg-zinc-900 text-white border-zinc-900' : 'bg-white text-zinc-700 border-zinc-200 hover:border-primary-300'}`}
+                  >
+                    {r}
+                  </button>
+                ))}
+              </div>
               <textarea
                 value={cancelReason}
                 onChange={(e) => setCancelReason(e.target.value)}
-                placeholder="Contoh: Pelanggan batal bayar QRIS, salah pilih varian menu, dll."
-                rows={3}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
+                placeholder="Tulis alasan lain jika perlu…"
+                rows={2}
+                data-testid="tx-cancel-reason-input"
+                className={`${fieldClass} resize-none`}
               />
             </div>
           </div>
         </Modal>
 
-        {/* Rejection Modal for Owner */}
+        {/* Rejection Modal */}
         <Modal
           isOpen={rejectModalOpen}
           onClose={() => setRejectModalOpen(false)}
-          title="Tolak Pengajuan Pembatalan"
+          title="Tolak Pengajuan"
+          subtitle={selected?.order_number}
+          icon={XCircle}
           size="sm"
+          testId="tx-reject-modal"
           footer={
-            <div className="flex gap-2 w-full">
-              <Button
-                variant="outline"
-                className="w-1/2"
-                onClick={() => setRejectModalOpen(false)}
-                disabled={rejecting}
-              >
-                Kembali
-              </Button>
-              <Button
-                variant="danger"
-                className="w-1/2"
-                onClick={handleRejectCancellation}
-                loading={rejecting}
-              >
-                Konfirmasi Tolak
-              </Button>
+            <div className="grid grid-cols-2 gap-2 w-full">
+              <Button variant="secondary" onClick={() => setRejectModalOpen(false)} disabled={rejecting} data-testid="tx-reject-back-button">Kembali</Button>
+              <Button variant="danger" onClick={handleRejectCancellation} loading={rejecting} data-testid="tx-reject-confirm-button">Tolak</Button>
             </div>
           }
         >
-          <div className="space-y-3">
-            <p className="text-xs text-gray-600">
-              Berikan catatan penolakan untuk kasir mengenai transaksi{' '}
-              <strong>{selected?.order_number}</strong>:
-            </p>
-            <textarea
-              value={rejectNote}
-              onChange={(e) => setRejectNote(e.target.value)}
-              placeholder="Contoh: Bukti pembayaran QRIS sudah terverifikasi masuk di mutasi bank."
-              rows={3}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
-            />
-          </div>
+          <FieldLabel>Catatan untuk kasir</FieldLabel>
+          <textarea
+            value={rejectNote}
+            onChange={(e) => setRejectNote(e.target.value)}
+            placeholder="Contoh: Pembayaran QRIS sudah masuk di mutasi."
+            rows={3}
+            data-testid="tx-reject-note-input"
+            className={`${fieldClass} resize-none`}
+          />
         </Modal>
       </div>
     </div>

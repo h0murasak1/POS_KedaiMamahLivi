@@ -25,7 +25,7 @@ function ProtectedRoute({ children, ownerOnly = false }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-linen">
         <LoadingSpinner size="lg" />
       </div>
     )
@@ -48,10 +48,11 @@ function AppRoutes() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
+      <div className="min-h-screen flex items-center justify-center bg-linen" data-testid="app-loading">
+        <div className="text-center animate-fade-in-up">
           <LoadingSpinner size="lg" />
-          <p className="mt-4 text-gray-500 text-sm">Memuat aplikasi...</p>
+          <p className="mt-4 font-heading font-semibold text-zinc-700">Menyiapkan kedai…</p>
+          <p className="text-xs text-zinc-400 mt-1">Kedai Mamah Livi POS</p>
         </div>
       </div>
     )
@@ -91,10 +92,22 @@ export default function App() {
             <AppRoutes />
             <SyncStatusBar />
             <Toaster
-              position="top-right"
+              position="top-center"
+              containerStyle={{ top: 76 }}
               toastOptions={{
                 duration: 3000,
-                style: { borderRadius: '12px', background: '#333', color: '#fff' },
+                style: {
+                  borderRadius: '16px',
+                  background: '#18181b',
+                  color: '#fafafa',
+                  fontFamily: 'var(--font-sans)',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  padding: '10px 14px',
+                  boxShadow: '0 16px 40px -12px rgba(24,24,27,0.5)',
+                },
+                success: { iconTheme: { primary: '#10b981', secondary: '#fff' } },
+                error: { iconTheme: { primary: '#ef4444', secondary: '#fff' } },
               }}
             />
           </LayoutProvider>

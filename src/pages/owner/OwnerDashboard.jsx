@@ -6,24 +6,13 @@ import { db } from '@/lib/db'
 import Header from '@/components/layout/Header'
 import Card, { CardHeader, CardTitle } from '@/components/ui/Card'
 import Badge from '@/components/ui/Badge'
-import { formatRupiah } from '@/lib/utils'
+import Button from '@/components/ui/Button'
+import EmptyState from '@/components/ui/EmptyState'
+import { formatRupiah, getGreeting } from '@/lib/utils'
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from 'recharts'
-import {
-  DollarSign,
-  ShoppingCart,
-  TrendingUp,
-  Users,
-  AlertTriangle,
-  Award,
-  ArrowRight,
+  ShoppingCart, TrendingUp, Users, AlertTriangle, Award, ArrowRight, Receipt, Clock,
+  UtensilsCrossed, BarChart3, ChevronRight,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
@@ -77,7 +66,7 @@ export default function OwnerDashboard() {
             .filter((o) => o.cancellation_status === 'requested')
             .count()
           cancelCount = Math.max(cancelCount, localRequests)
-        } catch (_) {}
+        } catch (_) { }
       }
       setPendingCancellations(cancelCount)
 
@@ -106,7 +95,7 @@ export default function OwnerDashboard() {
 
       // 3. Merge server and local orders uniquely by id
       const orderMap = new Map()
-      ;(serverOrders || []).forEach((o) => orderMap.set(o.id, o))
+        ; (serverOrders || []).forEach((o) => orderMap.set(o.id, o))
       localOrders.forEach((o) => {
         if (!orderMap.has(o.id)) orderMap.set(o.id, o)
       })
@@ -201,239 +190,195 @@ export default function OwnerDashboard() {
     }
   }
 
-  const statCards = [
-    {
-      title: 'Penjualan Hari Ini',
-      value: formatRupiah(stats.totalSales),
-      icon: DollarSign,
-      color: 'text-primary-600',
-      bg: 'bg-primary-50 border border-primary-100',
-    },
-    {
-      title: 'Total Transaksi',
-      value: stats.totalTransactions,
-      icon: ShoppingCart,
-      color: 'text-rose-600',
-      bg: 'bg-rose-50 border border-rose-100',
-    },
-    {
-      title: 'Rata-rata Transaksi',
-      value: formatRupiah(stats.avgTransaction),
-      icon: TrendingUp,
-      color: 'text-fuchsia-600',
-      bg: 'bg-fuchsia-50 border border-fuchsia-100',
-    },
-    {
-      title: 'Kasir Aktif',
-      value: stats.activeCashiers,
-      icon: Users,
-      color: 'text-purple-600',
-      bg: 'bg-purple-50 border border-purple-100',
-    },
+  const greeting = getGreeting()
+  const todayLabel = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+  const maxQty = topProducts[0]?.qty || 1
+
+  const kpis = [
+    { title: 'Transaksi', value: stats.totalTransactions, suffix: 'pesanan', icon: Receipt, tone: 'bg-primary-50 text-primary-700 border-primary-200/70', id: 'transactions' },
+    { title: 'Rata-rata / Transaksi', value: formatRupiah(stats.avgTransaction), icon: TrendingUp, tone: 'bg-secondary-50 text-secondary-700 border-secondary-200', id: 'average', mono: true },
+    { title: 'Kasir Aktif', value: stats.activeCashiers, suffix: 'orang', icon: Users, tone: 'bg-emerald-50 text-emerald-700 border-emerald-200', id: 'active-cashiers' },
+  ]
+
+  const quickActions = [
+    { label: 'Tambah Menu', icon: UtensilsCrossed, to: '/menu', id: 'menu' },
+    { label: 'Riwayat', icon: Receipt, to: '/transaksi', id: 'transaksi' },
+    { label: 'Laporan', icon: BarChart3, to: '/laporan', id: 'laporan' },
+    { label: 'Staf Kasir', icon: Users, to: '/kasir', id: 'kasir' },
   ]
 
   return (
     <div>
-      <Header title="Dashboard Pemilik" />
-      <div className="p-4 sm:p-6 space-y-6 animate-fade-in-up">
-        {/* Greeting Banner */}
-        <div className="bg-gradient-to-r from-primary-500 via-primary-600 to-pink-600 rounded-3xl p-6 sm:p-8 text-white shadow-lg shadow-primary-200/50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5 relative overflow-hidden">
-          <div className="absolute -right-8 -top-8 w-48 h-48 bg-white/10 rounded-full blur-xl pointer-events-none" />
-          <div className="relative z-10">
-            <span className="inline-block px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-xs font-bold uppercase tracking-wider mb-2">
-              ✨ Ringkasan Harian
-            </span>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-              Selamat Datang, {profile?.full_name || 'Pemilik'} 🌸
-            </h1>
-            <p className="text-white/85 text-xs sm:text-sm mt-1 max-w-md">
-              Pantau arus penjualan, kasir aktif, dan menu paling laris di Kedai Mamah Livi hari ini.
-            </p>
-          </div>
-          <button
-            onClick={() => navigate('/pos')}
-            className="inline-flex items-center justify-center gap-2.5 px-6 py-3.5 bg-white text-primary-700 hover:bg-pink-50 active:scale-95 font-extrabold rounded-2xl shadow-md transition-all self-start sm:self-auto relative z-10 text-sm"
-          >
-            <ShoppingCart className="w-5 h-5 text-primary-600" />
-            <span>Buka Kasir (POS)</span>
-          </button>
-        </div>
-
-        {/* Pending Cancellation Alert */}
-        {pendingCancellations > 0 && (
-          <div className="p-4 sm:p-5 bg-gradient-to-r from-rose-50 to-pink-50 border border-rose-200 rounded-3xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
-            <div className="flex items-center gap-3.5">
-              <div className="w-11 h-11 rounded-2xl bg-rose-100 flex items-center justify-center shrink-0">
-                <AlertTriangle className="w-6 h-6 text-rose-600" />
-              </div>
+      <Header title="Beranda" subtitle="Ringkasan kedai hari ini" />
+      <div className="p-4 sm:p-6 lg:p-8 space-y-5 sm:space-y-6 max-w-[1400px] w-full">
+        {/* Bento hero */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5 stagger">
+          <div className="lg:col-span-2 relative overflow-hidden rounded-3xl bg-zinc-900 text-white p-6 sm:p-8" data-testid="owner-hero">
+            <div className="absolute inset-0 bg-dots opacity-40" />
+            <div className="absolute -right-16 -top-16 w-72 h-72 rounded-full bg-primary-600/40 blur-3xl" />
+            <div className="absolute right-24 -bottom-24 w-56 h-56 rounded-full bg-secondary-500/25 blur-3xl" />
+            <div className="relative flex flex-col sm:flex-row sm:items-end justify-between gap-6">
               <div>
-                <p className="text-sm font-extrabold text-rose-900">
-                  {pendingCancellations} Pengajuan Pembatalan Transaksi Menunggu Persetujuan
+                <p className="text-xs font-medium text-white/60">{todayLabel}</p>
+                <h1 className="font-heading text-2xl sm:text-3xl font-bold tracking-tight mt-1" data-testid="owner-greeting">
+                  {greeting}, {profile?.full_name?.split(' ')[0] || 'Pemilik'} 👋
+                </h1>
+                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-primary-300 mt-6">Penjualan hari ini</p>
+                <p className="font-mono text-4xl sm:text-5xl font-semibold tabular tracking-tight mt-1" data-testid="owner-total-sales">
+                  {loading ? <span className="inline-block w-48 h-11 rounded-xl bg-white/10 animate-pulse" /> : formatRupiah(stats.totalSales)}
                 </p>
-                <p className="text-xs text-rose-700 mt-0.5">
-                  Kasir mengajukan pembatalan pesanan. Buka Riwayat Transaksi untuk menyetujui atau menolak.
-                </p>
+                <p className="text-sm text-white/60 mt-2">dari {stats.totalTransactions} transaksi selesai</p>
               </div>
-            </div>
-            <button
-              onClick={() => navigate('/transaksi')}
-              className="px-4 py-2 bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 active:scale-95 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-rose-200/50 whitespace-nowrap self-end sm:self-auto"
-            >
-              Tinjau Transaksi
-            </button>
-          </div>
-        )}
-
-        {/* Sync warnings */}
-        {(pendingCount > 0 || failedCount > 0) && (
-          <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-center gap-3">
-            <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
-            <div>
-              <p className="text-sm font-semibold text-amber-800">
-                {pendingCount > 0 && `${pendingCount} transaksi menunggu sinkronisasi. `}
-                {failedCount > 0 && `${failedCount} transaksi gagal disinkronkan.`}
-              </p>
-              <p className="text-xs text-amber-600 mt-0.5">
-                Dashboard memprioritaskan data transaksi yang sudah tersinkronisasi ke server.
-              </p>
+              <button
+                onClick={() => navigate('/pos')}
+                data-testid="owner-open-pos-button"
+                className="group inline-flex items-center gap-2.5 h-13 px-6 bg-gradient-to-br from-primary-500 to-primary-600 hover:from-primary-400 hover:to-primary-600 font-bold rounded-2xl shadow-[0_14px_30px_-10px_rgba(234,88,12,0.8)] active:scale-95 transition-[background-color,transform] self-start sm:self-auto"
+              >
+                <ShoppingCart className="w-5 h-5" />
+                Buka Kasir
+                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+              </button>
             </div>
           </div>
-        )}
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
-          {statCards.map((stat, idx) => (
-            <Card key={idx} className="p-4 sm:p-5 card-glow">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs sm:text-sm text-gray-500 font-semibold">{stat.title}</p>
-                  <p className="text-lg sm:text-2xl font-black text-gray-900 mt-1.5 tracking-tight">
-                    {loading ? '...' : stat.value}
+          <div className="grid grid-cols-3 lg:grid-cols-1 gap-3 sm:gap-4">
+            {kpis.map((k) => (
+              <Card key={k.id} className="p-3.5 sm:p-5 flex flex-col lg:flex-row lg:items-center gap-2.5 lg:gap-4" data-testid={`owner-kpi-${k.id}`}>
+                <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-2xl border flex items-center justify-center shrink-0 ${k.tone}`}>
+                  <k.icon className="w-5 h-5" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[11px] sm:text-xs font-semibold text-zinc-500 leading-tight">{k.title}</p>
+                  <p className={`text-base sm:text-2xl font-bold text-zinc-900 tracking-tight mt-0.5 truncate ${k.mono ? 'font-mono text-sm sm:text-xl' : 'font-heading'}`}>
+                    {loading ? '…' : k.value}
+                    {k.suffix && !loading && <span className="text-xs font-sans font-medium text-zinc-400 ml-1 hidden sm:inline">{k.suffix}</span>}
                   </p>
                 </div>
-                <div className={`w-11 h-11 sm:w-13 sm:h-13 ${stat.bg} rounded-2xl flex items-center justify-center shrink-0 shadow-2xs`}>
-                  <stat.icon className={`w-5 h-5 sm:w-6 sm:h-6 ${stat.color}`} />
-                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+
+        {/* Alerts */}
+        {pendingCancellations > 0 && (
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 sm:p-5 rounded-3xl bg-amber-50 border border-amber-200 animate-fade-in-up" data-testid="owner-cancellation-alert">
+            <div className="flex items-center gap-3.5">
+              <div className="relative w-11 h-11 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-5 h-5" />
+                <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-red-600 text-white text-[10px] font-bold flex items-center justify-center">{pendingCancellations}</span>
               </div>
-            </Card>
+              <div>
+                <p className="text-sm font-bold text-amber-950">{pendingCancellations} pengajuan pembatalan menunggu persetujuan</p>
+                <p className="text-xs text-amber-800 mt-0.5">Kasir butuh izin Anda untuk membatalkan transaksi.</p>
+              </div>
+            </div>
+            <Button variant="dark" size="sm" onClick={() => navigate('/transaksi')} iconRight={ChevronRight} data-testid="owner-review-cancellations-button" className="self-end sm:self-auto">
+              Tinjau sekarang
+            </Button>
+          </div>
+        )}
+
+        {(pendingCount > 0 || failedCount > 0) && (
+          <div className="flex items-center gap-3 p-4 rounded-2xl bg-white border border-zinc-200" data-testid="owner-sync-warning">
+            <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center shrink-0"><Clock className="w-4 h-4" /></div>
+            <p className="text-sm text-zinc-700">
+              {pendingCount > 0 && <><b>{pendingCount}</b> transaksi menunggu sinkronisasi. </>}
+              {failedCount > 0 && <><b className="text-red-600">{failedCount}</b> gagal disinkronkan.</>}
+            </p>
+          </div>
+        )}
+
+        {/* Quick actions */}
+        <div className="grid grid-cols-4 gap-2.5 sm:gap-4">
+          {quickActions.map((a) => (
+            <button
+              key={a.id}
+              onClick={() => navigate(a.to)}
+              data-testid={`owner-quick-${a.id}`}
+              className="group flex flex-col sm:flex-row items-center gap-2 sm:gap-3 p-3 sm:p-4 rounded-2xl bg-white border border-zinc-200/80 hover:border-primary-300 hover:-translate-y-0.5 hover:shadow-[0_12px_24px_-16px_rgba(234,88,12,0.5)] transition-[border-color,transform,box-shadow] text-center sm:text-left"
+            >
+              <span className="w-10 h-10 rounded-xl bg-zinc-100 group-hover:bg-primary-600 group-hover:text-white text-zinc-700 flex items-center justify-center transition-colors shrink-0">
+                <a.icon className="w-5 h-5" />
+              </span>
+              <span className="text-[11px] sm:text-sm font-semibold text-zinc-800 leading-tight">{a.label}</span>
+              <ChevronRight className="hidden sm:block w-4 h-4 text-zinc-300 ml-auto group-hover:text-primary-600 group-hover:translate-x-0.5 transition-[color,transform]" />
+            </button>
           ))}
         </div>
 
-        {/* Charts & Top Products */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Sales Chart */}
-          <Card className="p-5 sm:p-6 flex flex-col justify-between">
-            <CardHeader className="mb-4">
-              <div className="flex items-center justify-between w-full">
-                <div>
-                  <CardTitle>Grafik Penjualan Hari Ini</CardTitle>
-                  <p className="text-xs text-gray-500 mt-0.5">Tren omzet per jam</p>
-                </div>
-                <span className="text-xs font-bold px-3 py-1 bg-primary-50 text-primary-700 rounded-xl border border-primary-200/60 shadow-2xs">
-                  {formatRupiah(stats.totalSales)}
-                </span>
+        {/* Chart + Top products */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 sm:gap-5">
+          <Card className="lg:col-span-3" hover={false} data-testid="owner-sales-chart">
+            <CardHeader>
+              <div>
+                <CardTitle>Tren Penjualan per Jam</CardTitle>
+                <p className="text-xs text-zinc-500 mt-0.5">Omzet hari ini berdasarkan jam transaksi</p>
               </div>
+              <Badge variant="primary" dot>Hari ini</Badge>
             </CardHeader>
-
             {loading ? (
-              <div className="h-64 flex items-center justify-center text-gray-400 text-sm">
-                Memuat grafik...
-              </div>
+              <div className="h-64 animate-shimmer rounded-2xl" />
             ) : salesChart.length > 0 ? (
-              <div className="h-64 w-full">
+              <div className="h-64 w-full -ml-2">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={salesChart} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#fce7f3" />
-                    <XAxis dataKey="time" tick={{ fontSize: 11, fill: '#9d174d' }} axisLine={false} tickLine={false} />
-                    <YAxis
-                      tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
-                      tick={{ fontSize: 11, fill: '#9d174d' }}
-                      axisLine={false}
-                      tickLine={false}
-                    />
+                  <AreaChart data={salesChart} margin={{ top: 10, right: 8, left: -10, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="ownerSales" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#ea580c" stopOpacity={0.35} />
+                        <stop offset="100%" stopColor="#ea580c" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f4f4f5" />
+                    <XAxis dataKey="time" tick={{ fontSize: 11, fill: '#71717a' }} axisLine={false} tickLine={false} />
+                    <YAxis tickFormatter={(v) => `${(v / 1000).toFixed(0)}rb`} tick={{ fontSize: 11, fill: '#71717a' }} axisLine={false} tickLine={false} />
                     <Tooltip
                       formatter={(v) => [formatRupiah(v), 'Penjualan']}
                       labelFormatter={(l) => `Pukul ${l}`}
-                      contentStyle={{ 
-                        borderRadius: '16px', 
-                        borderColor: '#fbcfe8', 
-                        boxShadow: '0 10px 25px -5px rgba(236, 72, 153, 0.15)',
-                        backgroundColor: '#ffffff'
-                      }}
+                      contentStyle={{ borderRadius: 14, border: '1px solid #e4e4e7', boxShadow: '0 12px 30px -12px rgba(24,24,27,0.25)', fontSize: 12 }}
                     />
-                    <Bar dataKey="amount" fill="#ec4899" radius={[8, 8, 0, 0]} />
-                  </BarChart>
+                    <Area type="monotone" dataKey="amount" stroke="#ea580c" strokeWidth={2.5} fill="url(#ownerSales)" dot={{ r: 3, fill: '#ea580c' }} activeDot={{ r: 6 }} />
+                  </AreaChart>
                 </ResponsiveContainer>
               </div>
             ) : (
-              <div className="h-64 flex flex-col items-center justify-center text-gray-400 bg-pink-50/30 rounded-2xl border border-dashed border-pink-200">
-                <TrendingUp className="w-10 h-10 mb-2 opacity-30 text-primary-400" />
-                <p className="text-sm font-bold text-gray-600">Belum ada transaksi hari ini</p>
-                <p className="text-xs text-gray-400 mt-1">Grafik akan terisi otomatis saat kasir memproses pesanan</p>
-              </div>
+              <EmptyState compact icon={TrendingUp} title="Belum ada transaksi hari ini" description="Grafik terisi otomatis saat kasir memproses pesanan." />
             )}
           </Card>
 
-          {/* Top Products */}
-          <Card className="p-5 sm:p-6 flex flex-col justify-between">
-            <CardHeader className="mb-4">
-              <div className="flex items-center justify-between w-full">
-                <div>
-                  <CardTitle>Menu Terlaris Hari Ini</CardTitle>
-                  <p className="text-xs text-gray-500 mt-0.5">Berdasarkan porsi terjual</p>
-                </div>
-                <button
-                  onClick={() => navigate('/laporan')}
-                  className="text-xs font-bold text-primary-600 hover:text-primary-700 flex items-center gap-1 hover:underline"
-                >
-                  <span>Laporan Lengkap</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
+          <Card className="lg:col-span-2" hover={false} data-testid="owner-top-products">
+            <CardHeader>
+              <div>
+                <CardTitle>Menu Terlaris</CardTitle>
+                <p className="text-xs text-zinc-500 mt-0.5">Top 5 berdasarkan porsi</p>
               </div>
+              <button onClick={() => navigate('/laporan')} data-testid="owner-full-report-link" className="text-xs font-bold text-primary-700 hover:text-primary-800 flex items-center gap-0.5">
+                Laporan <ChevronRight className="w-3.5 h-3.5" />
+              </button>
             </CardHeader>
-
             {loading ? (
-              <div className="h-64 flex items-center justify-center text-gray-400 text-sm">
-                Memuat data...
-              </div>
+              <div className="space-y-3">{[0, 1, 2, 3].map((i) => <div key={i} className="h-12 animate-shimmer rounded-xl" />)}</div>
             ) : topProducts.length > 0 ? (
-              <div className="space-y-2.5">
+              <div className="space-y-3.5 stagger">
                 {topProducts.map((p, idx) => (
-                  <div
-                    key={p.name}
-                    className="flex items-center justify-between p-3 rounded-2xl bg-pink-50/40 hover:bg-pink-50/80 transition-colors border border-pink-100/70"
-                  >
-                    <div className="flex items-center gap-3 min-w-0 pr-2">
-                      <div
-                        className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black shrink-0 ${
-                          idx === 0
-                            ? 'bg-gradient-to-br from-amber-400 to-amber-500 text-white shadow-xs'
-                            : idx === 1
-                            ? 'bg-gradient-to-br from-slate-300 to-slate-400 text-white shadow-xs'
-                            : idx === 2
-                            ? 'bg-gradient-to-br from-amber-600 to-amber-700 text-white shadow-xs'
-                            : 'bg-primary-100 text-primary-800'
-                        }`}
-                      >
-                        {idx + 1}
+                  <div key={p.name} data-testid={`owner-top-product-${idx}`}>
+                    <div className="flex items-center justify-between gap-3 mb-1.5">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <span className={`w-6 h-6 rounded-lg text-[11px] font-bold flex items-center justify-center shrink-0 ${idx === 0 ? 'bg-secondary-400 text-secondary-950' : idx === 1 ? 'bg-zinc-300 text-zinc-800' : idx === 2 ? 'bg-primary-200 text-primary-900' : 'bg-zinc-100 text-zinc-500'}`}>{idx + 1}</span>
+                        <p className="text-sm font-semibold text-zinc-900 truncate">{p.name}</p>
                       </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-bold text-gray-900 truncate">{p.name}</p>
-                        <p className="text-xs text-gray-500">{p.qty} porsi terjual</p>
-                      </div>
+                      <p className="font-mono text-xs font-semibold text-zinc-700 shrink-0 tabular">{formatRupiah(p.revenue)}</p>
                     </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-sm font-black text-primary-600">{formatRupiah(p.revenue)}</p>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-2 rounded-full bg-zinc-100 overflow-hidden">
+                        <div className="h-full rounded-full bg-gradient-to-r from-primary-500 to-secondary-400 transition-[width] duration-700" style={{ width: `${(p.qty / maxQty) * 100}%` }} />
+                      </div>
+                      <span className="text-[11px] font-semibold text-zinc-500 w-14 text-right">{p.qty} porsi</span>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="h-64 flex flex-col items-center justify-center text-gray-400 bg-pink-50/30 rounded-2xl border border-dashed border-pink-200">
-                <Award className="w-10 h-10 mb-2 opacity-30 text-primary-400" />
-                <p className="text-sm font-bold text-gray-600">Belum ada menu terjual hari ini</p>
-                <p className="text-xs text-gray-400 mt-1">Daftar menu terpopuler akan otomatis muncul di sini</p>
-              </div>
+              <EmptyState compact icon={Award} title="Belum ada menu terjual" description="Menu favorit pelanggan akan muncul di sini." />
             )}
           </Card>
         </div>

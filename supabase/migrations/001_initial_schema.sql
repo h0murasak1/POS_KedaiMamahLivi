@@ -189,68 +189,105 @@ RETURNS BOOLEAN AS $$
 $$ LANGUAGE sql SECURITY DEFINER STABLE;
 
 -- PROFILES policies
+DROP POLICY IF EXISTS "Users can view own profile" ON profiles;
 CREATE POLICY "Users can view own profile" ON profiles
   FOR SELECT USING (id = auth.uid());
+
+DROP POLICY IF EXISTS "Owner can view all profiles" ON profiles;
 CREATE POLICY "Owner can view all profiles" ON profiles
   FOR SELECT USING (is_owner());
+
+DROP POLICY IF EXISTS "Owner can update profiles" ON profiles;
 CREATE POLICY "Owner can update profiles" ON profiles
   FOR UPDATE USING (is_owner());
+
+DROP POLICY IF EXISTS "Owner can insert profiles" ON profiles;
 CREATE POLICY "Owner can insert profiles" ON profiles
   FOR INSERT WITH CHECK (is_owner());
 
 -- CATEGORIES policies (semua user bisa baca, owner bisa CRUD)
+DROP POLICY IF EXISTS "Anyone can view categories" ON categories;
 CREATE POLICY "Anyone can view categories" ON categories
   FOR SELECT USING (auth.uid() IS NOT NULL);
+
+DROP POLICY IF EXISTS "Owner can manage categories" ON categories;
 CREATE POLICY "Owner can manage categories" ON categories
   FOR ALL USING (is_owner());
 
 -- PRODUCTS policies
+DROP POLICY IF EXISTS "Anyone can view products" ON products;
 CREATE POLICY "Anyone can view products" ON products
   FOR SELECT USING (auth.uid() IS NOT NULL);
+
+DROP POLICY IF EXISTS "Owner can manage products" ON products;
 CREATE POLICY "Owner can manage products" ON products
   FOR ALL USING (is_owner());
 
 -- PRODUCT_VARIANTS policies
+DROP POLICY IF EXISTS "Anyone can view variants" ON product_variants;
 CREATE POLICY "Anyone can view variants" ON product_variants
   FOR SELECT USING (auth.uid() IS NOT NULL);
+
+DROP POLICY IF EXISTS "Owner can manage variants" ON product_variants;
 CREATE POLICY "Owner can manage variants" ON product_variants
   FOR ALL USING (is_owner());
 
 -- ORDERS policies
+DROP POLICY IF EXISTS "Owner can view all orders" ON orders;
 CREATE POLICY "Owner can view all orders" ON orders
   FOR SELECT USING (is_owner());
+
+DROP POLICY IF EXISTS "Cashier can view own orders" ON orders;
 CREATE POLICY "Cashier can view own orders" ON orders
   FOR SELECT USING (cashier_id = auth.uid());
+
+DROP POLICY IF EXISTS "Authenticated users can insert orders" ON orders;
 CREATE POLICY "Authenticated users can insert orders" ON orders
   FOR INSERT WITH CHECK (auth.uid() IS NOT NULL AND cashier_id = auth.uid());
+
+DROP POLICY IF EXISTS "Owner can update orders" ON orders;
 CREATE POLICY "Owner can update orders" ON orders
   FOR UPDATE USING (is_owner());
 
 -- ORDER_ITEMS policies
+DROP POLICY IF EXISTS "Owner can view all order items" ON order_items;
 CREATE POLICY "Owner can view all order items" ON order_items
   FOR SELECT USING (is_owner());
+
+DROP POLICY IF EXISTS "Cashier can view own order items" ON order_items;
 CREATE POLICY "Cashier can view own order items" ON order_items
   FOR SELECT USING (
     EXISTS (SELECT 1 FROM orders WHERE orders.id = order_items.order_id AND orders.cashier_id = auth.uid())
   );
+
+DROP POLICY IF EXISTS "Authenticated users can insert order items" ON order_items;
 CREATE POLICY "Authenticated users can insert order items" ON order_items
   FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
 
 -- PAYMENTS policies
+DROP POLICY IF EXISTS "Owner can view all payments" ON payments;
 CREATE POLICY "Owner can view all payments" ON payments
   FOR SELECT USING (is_owner());
+
+DROP POLICY IF EXISTS "Authenticated users can insert payments" ON payments;
 CREATE POLICY "Authenticated users can insert payments" ON payments
   FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
 
 -- AUDIT_LOGS policies
+DROP POLICY IF EXISTS "Owner can view audit logs" ON audit_logs;
 CREATE POLICY "Owner can view audit logs" ON audit_logs
   FOR SELECT USING (is_owner());
+
+DROP POLICY IF EXISTS "Authenticated can insert audit logs" ON audit_logs;
 CREATE POLICY "Authenticated can insert audit logs" ON audit_logs
   FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
 
 -- STORE_SETTINGS policies
+DROP POLICY IF EXISTS "Anyone can view settings" ON store_settings;
 CREATE POLICY "Anyone can view settings" ON store_settings
   FOR SELECT USING (auth.uid() IS NOT NULL);
+
+DROP POLICY IF EXISTS "Owner can manage settings" ON store_settings;
 CREATE POLICY "Owner can manage settings" ON store_settings
   FOR ALL USING (is_owner());
 

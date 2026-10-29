@@ -77,9 +77,9 @@ export function SyncProvider({ children }) {
       for (const item of pendingItems) {
         try {
           // Update status to syncing
-          await db.sync_queue.update(item.id, { 
-            status: 'syncing', 
-            last_attempt: new Date().toISOString() 
+          await db.sync_queue.update(item.id, {
+            status: 'syncing',
+            last_attempt: new Date().toISOString()
           })
 
           // Get the local order
@@ -105,7 +105,7 @@ export function SyncProvider({ children }) {
 
         } catch (err) {
           console.error(`Sync failed for order ${item.order_id}:`, err)
-          await db.sync_queue.update(item.id, { 
+          await db.sync_queue.update(item.id, {
             status: 'failed',
             error_message: err.message,
             last_attempt: new Date().toISOString(),
