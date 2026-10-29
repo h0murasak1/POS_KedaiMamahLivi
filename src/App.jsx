@@ -25,7 +25,7 @@ function ProtectedRoute({ children, ownerOnly = false }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-linen">
+      <div className="min-h-[100dvh] flex items-center justify-center bg-linen">
         <LoadingSpinner size="lg" />
       </div>
     )
@@ -48,7 +48,7 @@ function AppRoutes() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-linen" data-testid="app-loading">
+      <div className="min-h-[100dvh] flex items-center justify-center bg-linen" data-testid="app-loading">
         <div className="text-center animate-fade-in-up">
           <LoadingSpinner size="lg" />
           <p className="mt-4 font-heading font-semibold text-zinc-700">Menyiapkan kedai…</p>

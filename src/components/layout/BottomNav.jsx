@@ -18,7 +18,12 @@ export default function BottomNav() {
     return (
         <nav
             data-testid="bottom-nav"
-            className="lg:hidden fixed bottom-0 inset-x-0 z-40 glass border-t border-zinc-200/80 pb-[env(safe-area-inset-bottom)]"
+            className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-md border-t border-zinc-200/80 shadow-[0_-4px_20px_rgba(0,0,0,0.04)]"
+            style={{
+                paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+                transform: 'translateZ(0)',
+                WebkitTransform: 'translateZ(0)',
+            }}
         >
             <div className="h-[68px] grid grid-flow-col auto-cols-fr items-center px-2">
                 {items.map((item) =>

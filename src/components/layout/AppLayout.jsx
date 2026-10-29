@@ -7,7 +7,7 @@ export default function AppLayout() {
   const { sidebarOpen, closeSidebar } = useLayout()
 
   return (
-    <div className="min-h-screen bg-linen flex">
+    <div className="min-h-[100dvh] bg-linen flex">
       {/* Mobile backdrop */}
       {sidebarOpen && (
         <div
@@ -26,7 +26,7 @@ export default function AppLayout() {
       </div>
 
       {/* Main content area */}
-      <main className="flex-1 lg:pl-[248px] flex flex-col min-h-screen w-full min-w-0 pb-[var(--bnav)]">
+      <main className="flex-1 lg:pl-[248px] flex flex-col w-full min-w-0 pb-[var(--bnav)]">
         <Outlet />
       </main>
 
