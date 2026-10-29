@@ -1,0 +1,17 @@
+{
+  "name": "POS Kedai Mamah Livi",
+  "short_name": "POS KML",
+  "description": "Sistem Point of Sale Kedai Mamah Livi — Offline-First",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#ea580c",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
