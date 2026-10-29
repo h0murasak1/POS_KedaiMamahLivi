@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { db } from '@/lib/db'
+import { useAuth } from '@/contexts/AuthContext'
 import Header from '@/components/layout/Header'
 import Card, { CardHeader, CardTitle } from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
@@ -8,9 +9,10 @@ import Input, { fieldClass, FieldLabel } from '@/components/ui/Input'
 import ReceiptView from '@/components/pos/ReceiptView'
 import { useSoundEnabled, setSoundEnabled, playSuccess } from '@/lib/sound'
 import toast from 'react-hot-toast'
-import { Save, Store, Shield, KeyRound, Eye, EyeOff, Smartphone, Volume2, VolumeX } from 'lucide-react'
+import { Save, Store, Shield, KeyRound, Eye, EyeOff, Smartphone, Volume2, VolumeX, Lock } from 'lucide-react'
 
 export default function SettingsPage() {
+  const { user, profile } = useAuth()
   const [settings, setSettings] = useState({
     store_name: 'Kedai Mamah Livi',
     store_address: '',
@@ -23,6 +25,12 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const soundOn = useSoundEnabled()
+
+  // State untuk ganti password pemilik
+  const [ownerPassword, setOwnerPassword] = useState('')
+  const [ownerConfirm, setOwnerConfirm] = useState('')
+  const [showOwnerPassword, setShowOwnerPassword] = useState(false)
+  const [changingPassword, setChangingPassword] = useState(false)
 
   useEffect(() => { fetchSettings() }, [])
 
@@ -79,6 +87,44 @@ export default function SettingsPage() {
     }
   }
 
+  const handleChangeOwnerPassword = async (e) => {
+    e.preventDefault()
+    if (!ownerPassword || ownerPassword.length < 6) {
+      toast.error('Password baru minimal 6 karakter')
+      return
+    }
+    if (ownerPassword !== ownerConfirm) {
+      toast.error('Konfirmasi password tidak cocok')
+      return
+    }
+
+    setChangingPassword(true)
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: ownerPassword,
+      })
+      if (error) throw error
+
+      toast.success('Password akun pemilik berhasil diperbarui!')
+      setOwnerPassword('')
+      setOwnerConfirm('')
+
+      // Catat ke audit log
+      try {
+        await supabase.from('audit_logs').insert({
+          user_id: user?.id,
+          user_name: profile?.full_name || 'Pemilik',
+          action: 'change_owner_password',
+          details: 'Pemilik memperbarui password akun login',
+        })
+      } catch (_) {}
+    } catch (err) {
+      toast.error(err.message || 'Gagal mengubah password pemilik')
+    } finally {
+      setChangingPassword(false)
+    }
+  }
+
   const update = (key, value) => setSettings(prev => ({ ...prev, [key]: value }))
 
   const sampleOrder = {
@@ -130,7 +176,7 @@ export default function SettingsPage() {
             )}
           </Card>
 
-          {/* Security */}
+          {/* Security — PIN Pembatalan */}
           <Card hover={false} data-testid="settings-security-card">
             <CardHeader>
               <div className="flex items-center gap-3.5">
@@ -167,6 +213,69 @@ export default function SettingsPage() {
             <p className="text-xs text-zinc-500 mt-3 leading-relaxed">
               Default <b className="text-zinc-800">1234</b> — segera ganti dan jangan bagikan ke kasir. Kasir hanya bisa membatalkan transaksi dengan PIN ini atau persetujuan Owner dari jarak jauh.
             </p>
+          </Card>
+
+          {/* Owner Account Password */}
+          <Card hover={false} data-testid="settings-owner-password-card">
+            <CardHeader>
+              <div className="flex items-center gap-3.5">
+                <div className="w-11 h-11 bg-rose-50 border border-rose-200 text-rose-700 rounded-2xl flex items-center justify-center shrink-0">
+                  <Lock className="w-5 h-5" />
+                </div>
+                <div>
+                  <CardTitle>Password Akun Pemilik</CardTitle>
+                  <p className="text-xs text-zinc-500 mt-0.5">Ubah password akun login Pemilik ({profile?.email || user?.email || 'Owner'})</p>
+                </div>
+              </div>
+            </CardHeader>
+            <form onSubmit={handleChangeOwnerPassword} className="space-y-4">
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <FieldLabel hint="min. 6 karakter">Password Baru</FieldLabel>
+                  <div className="relative">
+                    <Lock className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      type={showOwnerPassword ? 'text' : 'password'}
+                      value={ownerPassword}
+                      onChange={(e) => setOwnerPassword(e.target.value)}
+                      placeholder="Password baru"
+                      className={`${fieldClass} pl-10 pr-11`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowOwnerPassword(!showOwnerPassword)}
+                      className="absolute right-1.5 top-1/2 -translate-y-1/2 w-9 h-9 rounded-lg flex items-center justify-center text-zinc-400 hover:text-zinc-800 hover:bg-zinc-100"
+                    >
+                      {showOwnerPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <FieldLabel>Konfirmasi Password Baru</FieldLabel>
+                  <div className="relative">
+                    <Lock className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      type={showOwnerPassword ? 'text' : 'password'}
+                      value={ownerConfirm}
+                      onChange={(e) => setOwnerConfirm(e.target.value)}
+                      placeholder="Ulangi password baru"
+                      className={`${fieldClass} pl-10`}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="flex justify-end pt-1">
+                <Button
+                  type="submit"
+                  variant="dark"
+                  loading={changingPassword}
+                  icon={KeyRound}
+                  data-testid="settings-change-password-button"
+                >
+                  Ubah Password Pemilik
+                </Button>
+              </div>
+            </form>
           </Card>
 
           {/* Device preferences */}

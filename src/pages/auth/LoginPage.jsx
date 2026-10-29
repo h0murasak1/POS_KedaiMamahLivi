@@ -1,10 +1,13 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
-import { Eye, EyeOff, Mail, Lock, ArrowRight, WifiOff, Zap, ShieldCheck, AlertCircle } from 'lucide-react'
+import { supabase } from '@/lib/supabase'
+import { Eye, EyeOff, Mail, Lock, ArrowRight, WifiOff, Zap, ShieldCheck, AlertCircle, KeyRound, CheckCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { BrandMark } from '@/components/layout/Sidebar'
 import { fieldClass, FieldLabel } from '@/components/ui/Input'
+import Modal from '@/components/ui/Modal'
+import Button from '@/components/ui/Button'
 import { playError, playSuccess } from '@/lib/sound'
 
 const HERO_IMG = 'https://images.unsplash.com/photo-1611506168759-1e69a83b5a53?crop=entropy&cs=srgb&fm=jpg&q=80&w=1400'
@@ -23,6 +26,13 @@ export default function LoginPage() {
   const [capsLock, setCapsLock] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
   const [shakeKey, setShakeKey] = useState(0)
+
+  // Forgot password modal state
+  const [showForgotModal, setShowForgotModal] = useState(false)
+  const [forgotEmail, setForgotEmail] = useState('')
+  const [forgotLoading, setForgotLoading] = useState(false)
+  const [forgotSent, setForgotSent] = useState(false)
+
   const { signIn } = useAuth()
   const navigate = useNavigate()
 
@@ -49,6 +59,33 @@ export default function LoginPage() {
       playError()
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleForgotSubmit = async (e) => {
+    e.preventDefault()
+    if (!forgotEmail) {
+      toast.error('Masukkan alamat email pemilik')
+      return
+    }
+
+    setForgotLoading(true)
+    try {
+      const redirectUrl = `${window.location.origin}/reset-password`
+      const { error } = await supabase.auth.resetPasswordForEmail(
+        forgotEmail.trim().toLowerCase(),
+        {
+          redirectTo: redirectUrl,
+        }
+      )
+      if (error) throw error
+
+      setForgotSent(true)
+      toast.success('Tautan reset password berhasil dikirim!')
+    } catch (err) {
+      toast.error(err.message || 'Gagal mengirim instruksi reset password')
+    } finally {
+      setForgotLoading(false)
     }
   }
 
@@ -190,12 +227,84 @@ export default function LoginPage() {
               </button>
             </form>
 
-            <p className="text-xs text-zinc-400 mt-6 text-center lg:text-left">
-              Lupa password? Hubungi pemilik kedai untuk reset akun kasir.
-            </p>
+            <div className="mt-6 pt-4 border-t border-zinc-100 flex flex-col gap-2.5">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-zinc-500 font-medium">Lupa password pemilik?</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setForgotEmail(email || '')
+                    setForgotSent(false)
+                    setShowForgotModal(true)
+                  }}
+                  data-testid="login-forgot-password-link"
+                  className="font-bold text-primary-600 hover:text-primary-700 hover:underline"
+                >
+                  Reset Password
+                </button>
+              </div>
+              <p className="text-[11px] text-zinc-400 leading-relaxed">
+                Untuk staf kasir, silakan hubungi pemilik kedai untuk reset atau pembuatan password baru.
+              </p>
+            </div>
           </div>
         </div>
       </section>
+
+      {/* Modal Lupa Password Pemilik */}
+      <Modal
+        isOpen={showForgotModal}
+        onClose={() => setShowForgotModal(false)}
+        title="Reset Password Pemilik"
+        subtitle="Kirimkan tautan reset password ke email Anda"
+        icon={KeyRound}
+        size="sm"
+        testId="login-forgot-modal"
+      >
+        {forgotSent ? (
+          <div className="py-4 text-center space-y-3">
+            <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
+              <CheckCircle className="w-6 h-6" />
+            </div>
+            <p className="text-sm font-bold text-zinc-900">Tautan Berhasil Dikirim!</p>
+            <p className="text-xs text-zinc-600 leading-relaxed">
+              Kami telah mengirimkan instruksi reset password ke <b>{forgotEmail}</b>. Silakan periksa kotak masuk (Inbox) atau folder Spam email Anda.
+            </p>
+            <Button className="w-full mt-2" onClick={() => setShowForgotModal(false)}>
+              Tutup
+            </Button>
+          </div>
+        ) : (
+          <form onSubmit={handleForgotSubmit} className="space-y-4">
+            <p className="text-xs text-zinc-500 leading-relaxed">
+              Masukkan alamat email pemilik yang terdaftar. Kami akan mengirimkan tautan aman untuk membuat password baru.
+            </p>
+            <div>
+              <FieldLabel>Email Pemilik</FieldLabel>
+              <div className="relative">
+                <Mail className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  type="email"
+                  value={forgotEmail}
+                  onChange={(e) => setForgotEmail(e.target.value)}
+                  placeholder="pemilik@kedaimamahlivi.com"
+                  className={`${fieldClass} pl-10 min-h-11`}
+                  required
+                  autoFocus
+                />
+              </div>
+            </div>
+            <div className="flex gap-2 pt-2">
+              <Button type="button" variant="secondary" className="flex-1" onClick={() => setShowForgotModal(false)}>
+                Batal
+              </Button>
+              <Button type="submit" loading={forgotLoading} className="flex-1">
+                Kirim Tautan
+              </Button>
+            </div>
+          </form>
+        )}
+      </Modal>
     </div>
   )
 }

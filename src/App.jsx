@@ -9,6 +9,7 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner'
 
 // Pages
 import LoginPage from '@/pages/auth/LoginPage'
+import ResetPasswordPage from '@/pages/auth/ResetPasswordPage'
 import OwnerDashboard from '@/pages/owner/OwnerDashboard'
 import CashierDashboard from '@/pages/cashier/CashierDashboard'
 import POSPage from '@/pages/pos/POSPage'
@@ -62,6 +63,7 @@ function AppRoutes() {
     <Routes>
       {/* Public */}
       <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <LoginPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
 
       {/* Protected with layout */}
       <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
