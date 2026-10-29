@@ -16,17 +16,17 @@ DECLARE
   v_cashier_name TEXT;
   v_cashier_email TEXT;
 BEGIN
-  -- 1. Verifikasi hanya pemilik yang berhak mereset password kasir
+  -- Verifikasi hanya pemilik yang berhak mereset password kasir
   IF NOT is_owner() THEN
     RAISE EXCEPTION 'Hanya pemilik yang berhak mereset password kasir';
   END IF;
 
-  -- 2. Validasi input
+  -- Validasi input
   IF p_new_password IS NULL OR length(p_new_password) < 6 THEN
     RAISE EXCEPTION 'Password baru minimal 6 karakter';
   END IF;
 
-  -- 3. Verifikasi akun yang direset adalah kasir
+  -- Verifikasi akun yang direset adalah kasir
   SELECT role, full_name, email INTO v_role, v_cashier_name, v_cashier_email 
   FROM public.profiles 
   WHERE id = p_cashier_id;
@@ -39,17 +39,17 @@ BEGIN
     RAISE EXCEPTION 'Fungsi ini khusus untuk mereset akun kasir';
   END IF;
 
-  -- 4. Enkripsi password menggunakan bcrypt
+  -- Enkripsi password menggunakan bcrypt
   v_encrypted_pw := extensions.crypt(p_new_password, extensions.gen_salt('bf'));
 
-  -- 5. Update password di auth.users
+  -- Update password di auth.users
   UPDATE auth.users
   SET 
     encrypted_password = v_encrypted_pw,
     updated_at = now()
   WHERE id = p_cashier_id;
 
-  -- 6. Catat ke audit log
+  -- Catat ke audit log
   INSERT INTO public.audit_logs (user_id, user_name, action, details)
   VALUES (
     auth.uid(),

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
-import { Eye, EyeOff, Mail, Lock, ArrowRight, WifiOff, Zap, ShieldCheck, AlertCircle, KeyRound, CheckCircle } from 'lucide-react'
+import { Eye, EyeOff, Mail, Lock, ArrowRight, WifiOff, Zap, ShieldCheck, AlertCircle, KeyRound, CheckCircle, Shield } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { BrandMark } from '@/components/layout/Sidebar'
 import { fieldClass, FieldLabel } from '@/components/ui/Input'
@@ -29,7 +29,12 @@ export default function LoginPage() {
 
   // Forgot password modal state
   const [showForgotModal, setShowForgotModal] = useState(false)
+  const [forgotMethod, setForgotMethod] = useState('pin') // 'pin' | 'email'
   const [forgotEmail, setForgotEmail] = useState('')
+  const [forgotPin, setForgotPin] = useState('')
+  const [forgotNewPassword, setForgotNewPassword] = useState('')
+  const [showForgotPin, setShowForgotPin] = useState(false)
+  const [showForgotNewPassword, setShowForgotNewPassword] = useState(false)
   const [forgotLoading, setForgotLoading] = useState(false)
   const [forgotSent, setForgotSent] = useState(false)
 
@@ -62,7 +67,50 @@ export default function LoginPage() {
     }
   }
 
-  const handleForgotSubmit = async (e) => {
+  // Reset password via PIN Owner (solusi email dummy / tidak aktif)
+  const handlePinResetSubmit = async (e) => {
+    e.preventDefault()
+    if (!forgotEmail) {
+      toast.error('Masukkan email akun pemilik')
+      return
+    }
+    if (!forgotPin) {
+      toast.error('Masukkan PIN Owner (default 1234)')
+      return
+    }
+    if (!forgotNewPassword || forgotNewPassword.length < 6) {
+      toast.error('Password baru minimal 6 karakter')
+      return
+    }
+
+    setForgotLoading(true)
+    try {
+      const { data, error } = await supabase.rpc('reset_owner_password_with_pin', {
+        p_email: forgotEmail.trim().toLowerCase(),
+        p_pin: forgotPin.trim(),
+        p_new_password: forgotNewPassword,
+      })
+
+      if (error) throw error
+
+      if (data && !data.success) {
+        toast.error(data.message || 'Gagal mereset password')
+        return
+      }
+
+      toast.success(data?.message || 'Password pemilik berhasil direset!')
+      setEmail(forgotEmail.trim().toLowerCase())
+      setPassword(forgotNewPassword)
+      setShowForgotModal(false)
+    } catch (err) {
+      toast.error(err.message || 'Gagal mereset password. Pastikan migrasi database sudah di-push.')
+    } finally {
+      setForgotLoading(false)
+    }
+  }
+
+  // Reset password via Email Link (opsional jika email aktif)
+  const handleEmailLinkSubmit = async (e) => {
     e.preventDefault()
     if (!forgotEmail) {
       toast.error('Masukkan alamat email pemilik')
@@ -234,6 +282,8 @@ export default function LoginPage() {
                   type="button"
                   onClick={() => {
                     setForgotEmail(email || '')
+                    setForgotPin('')
+                    setForgotNewPassword('')
                     setForgotSent(false)
                     setShowForgotModal(true)
                   }}
@@ -256,12 +306,109 @@ export default function LoginPage() {
         isOpen={showForgotModal}
         onClose={() => setShowForgotModal(false)}
         title="Reset Password Pemilik"
-        subtitle="Kirimkan tautan reset password ke email Anda"
+        subtitle="Reset langsung tanpa perlu akses kotak masuk email"
         icon={KeyRound}
         size="sm"
         testId="login-forgot-modal"
       >
-        {forgotSent ? (
+        {/* Toggle metode */}
+        <div className="flex p-1 bg-zinc-100 rounded-xl mb-4 text-xs font-semibold">
+          <button
+            type="button"
+            onClick={() => setForgotMethod('pin')}
+            className={`flex-1 py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1.5 ${
+              forgotMethod === 'pin' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-800'
+            }`}
+          >
+            <Shield className="w-3.5 h-3.5 text-primary-600" /> Verifikasi PIN (Instan)
+          </button>
+          <button
+            type="button"
+            onClick={() => setForgotMethod('email')}
+            className={`flex-1 py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1.5 ${
+              forgotMethod === 'email' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-800'
+            }`}
+          >
+            <Mail className="w-3.5 h-3.5" /> Kirim Tautan Email
+          </button>
+        </div>
+
+        {forgotMethod === 'pin' ? (
+          <form onSubmit={handlePinResetSubmit} className="space-y-3.5">
+            <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 leading-relaxed">
+              <b>Solusi Email Custom/Dummy:</b> Tidak perlu membuka email. Cukup masukkan email akun dan <b>PIN Owner</b> (default: <b>1234</b>).
+            </div>
+
+            <div>
+              <FieldLabel>Email Akun Pemilik</FieldLabel>
+              <div className="relative">
+                <Mail className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  type="email"
+                  value={forgotEmail}
+                  onChange={(e) => setForgotEmail(e.target.value)}
+                  placeholder="pemilik@kedaimamahlivi.com"
+                  className={`${fieldClass} pl-10`}
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <FieldLabel hint="Default: 1234">PIN Owner</FieldLabel>
+              <div className="relative">
+                <Shield className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  type={showForgotPin ? 'text' : 'password'}
+                  inputMode="numeric"
+                  value={forgotPin}
+                  onChange={(e) => setForgotPin(e.target.value)}
+                  placeholder="Masukkan PIN Owner"
+                  className={`${fieldClass} pl-10 pr-10`}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowForgotPin(!showForgotPin)}
+                  className="absolute right-1.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg flex items-center justify-center text-zinc-400 hover:text-zinc-700"
+                >
+                  {showForgotPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <FieldLabel hint="min. 6 karakter">Password Baru</FieldLabel>
+              <div className="relative">
+                <Lock className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  type={showForgotNewPassword ? 'text' : 'password'}
+                  value={forgotNewPassword}
+                  onChange={(e) => setForgotNewPassword(e.target.value)}
+                  placeholder="Buat password baru"
+                  className={`${fieldClass} pl-10 pr-10`}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowForgotNewPassword(!showForgotNewPassword)}
+                  className="absolute right-1.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg flex items-center justify-center text-zinc-400 hover:text-zinc-700"
+                >
+                  {showForgotNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <Button type="button" variant="secondary" className="flex-1" onClick={() => setShowForgotModal(false)}>
+                Batal
+              </Button>
+              <Button type="submit" loading={forgotLoading} className="flex-1">
+                Reset Password
+              </Button>
+            </div>
+          </form>
+        ) : forgotSent ? (
           <div className="py-4 text-center space-y-3">
             <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
               <CheckCircle className="w-6 h-6" />
@@ -275,9 +422,9 @@ export default function LoginPage() {
             </Button>
           </div>
         ) : (
-          <form onSubmit={handleForgotSubmit} className="space-y-4">
+          <form onSubmit={handleEmailLinkSubmit} className="space-y-4">
             <p className="text-xs text-zinc-500 leading-relaxed">
-              Masukkan alamat email pemilik yang terdaftar. Kami akan mengirimkan tautan aman untuk membuat password baru.
+              Masukkan alamat email pemilik yang terdaftar dan memiliki kotak masuk aktif. Kami akan mengirimkan tautan aman untuk membuat password baru.
             </p>
             <div>
               <FieldLabel>Email Pemilik</FieldLabel>
@@ -287,7 +434,7 @@ export default function LoginPage() {
                   type="email"
                   value={forgotEmail}
                   onChange={(e) => setForgotEmail(e.target.value)}
-                  placeholder="pemilik@kedaimamahlivi.com"
+                  placeholder="pemilik@gmail.com"
                   className={`${fieldClass} pl-10 min-h-11`}
                   required
                   autoFocus
