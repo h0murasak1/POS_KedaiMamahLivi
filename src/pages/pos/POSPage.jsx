@@ -598,7 +598,7 @@ export default function POSPage() {
 
       {/* Floating cart bar — phone & tablet portrait */}
       {cart.length > 0 && (
-        <div className="lg:hidden absolute inset-x-3 sm:inset-x-6 bottom-3 z-30 animate-scale-in" data-testid="mobile-cart-bar">
+        <div className="lg:hidden fixed inset-x-3 sm:inset-x-6 bottom-[calc(var(--bnav)+0.75rem)] z-30 animate-scale-in" data-testid="mobile-cart-bar">
           <div className="flex items-center gap-2 p-2 rounded-[22px] bg-zinc-900 text-white shadow-[0_18px_40px_-14px_rgba(24,24,27,0.7)]">
             <button
               onClick={() => setMobileCartOpen(true)}
