@@ -694,7 +694,7 @@ export default function POSPage() {
         footer={
           <Button
             size="xl"
-            className="w-full"
+            className="w-full !min-h-11 sm:!min-h-14 !px-4 sm:!px-8 !text-sm sm:!text-lg"
             onClick={processPayment}
             loading={processing}
             disabled={paymentMethod === 'cash' && change < 0}
@@ -707,9 +707,9 @@ export default function POSPage() {
           </Button>
         }
       >
-        <div className="grid md:grid-cols-2 gap-5">
-          <div className="space-y-4">
-            <div className="relative overflow-hidden rounded-2xl bg-zinc-900 text-white p-5">
+        <div className="-mx-5 -my-5 p-3 sm:mx-0 sm:my-0 sm:p-0 grid md:grid-cols-2 gap-3 sm:gap-5">
+          <div className="space-y-3 sm:space-y-4">
+            <div className="relative overflow-hidden rounded-2xl bg-zinc-900 text-white p-3 sm:p-5">
               <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full bg-primary-500/30 blur-2xl" />
               <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-white/60">Total Tagihan</p>
               <p className="font-mono text-3xl sm:text-4xl font-semibold mt-1 tabular tracking-tight" data-testid="payment-modal-total">{formatRupiah(cartTotals.total)}</p>
@@ -720,7 +720,7 @@ export default function POSPage() {
 
             <div>
               <p className="text-[11px] font-bold text-zinc-500 uppercase tracking-[0.08em] mb-2">Metode Pembayaran</p>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
                 {PAYMENT_METHODS.map((m) => {
                   const active = paymentMethod === m.value
                   return (
@@ -728,12 +728,12 @@ export default function POSPage() {
                       key={m.value}
                       onClick={() => setPaymentMethod(m.value)}
                       data-testid={`payment-method-${m.value}`}
-                      className={`relative p-3 rounded-2xl border-2 text-center transition-[background-color,border-color,transform] active:scale-95 ${active ? 'border-primary-500 bg-primary-50' : 'border-zinc-200 bg-white hover:border-zinc-300'
+                      className={`relative p-2 sm:p-3 rounded-2xl border-2 text-center transition-[background-color,border-color,transform] active:scale-95 ${active ? 'border-primary-500 bg-primary-50' : 'border-zinc-200 bg-white hover:border-zinc-300'
                         }`}
                     >
                       {active && <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-primary-600 text-white flex items-center justify-center animate-pop"><Check className="w-2.5 h-2.5" strokeWidth={4} /></span>}
-                      <m.icon className={`w-6 h-6 mx-auto ${active ? 'text-primary-600' : 'text-zinc-500'}`} />
-                      <p className={`text-sm font-bold mt-1.5 ${active ? 'text-primary-900' : 'text-zinc-800'}`}>{m.label}</p>
+                      <m.icon className={`w-5 h-5 sm:w-6 sm:h-6 mx-auto ${active ? 'text-primary-600' : 'text-zinc-500'}`} />
+                      <p className={`text-xs sm:text-sm font-bold mt-1 ${active ? 'text-primary-900' : 'text-zinc-800'}`}>{m.label}</p>
                       <p className="text-[10px] text-zinc-500 hidden sm:block">{m.hint}</p>
                     </button>
                   )
@@ -744,11 +744,11 @@ export default function POSPage() {
             {paymentMethod === 'cash' && (
               <div className="space-y-2">
                 <p className="text-[11px] font-bold text-zinc-500 uppercase tracking-[0.08em]">Uang Cepat</p>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
                   <button
                     onClick={() => setCashReceived(String(cartTotals.total))}
                     data-testid="payment-quick-exact"
-                    className="h-11 rounded-xl text-sm font-bold bg-primary-600 text-white hover:bg-primary-700 active:scale-95 transition-[background-color,transform]"
+                    className="h-10 sm:h-11 rounded-xl text-xs sm:text-sm font-bold bg-primary-600 text-white hover:bg-primary-700 active:scale-95 transition-[background-color,transform]"
                   >
                     Uang Pas
                   </button>
@@ -757,7 +757,7 @@ export default function POSPage() {
                       key={amt}
                       onClick={() => setCashReceived(String(amt))}
                       data-testid={`payment-quick-${amt}`}
-                      className={`h-11 rounded-xl text-sm font-semibold font-mono border transition-[background-color,border-color,transform] active:scale-95 ${cashValue === amt ? 'bg-primary-50 border-primary-400 text-primary-900' : 'bg-white border-zinc-200 text-zinc-800 hover:border-primary-300'}`}
+                      className={`h-10 sm:h-11 rounded-xl text-xs sm:text-sm font-semibold font-mono border transition-[background-color,border-color,transform] active:scale-95 ${cashValue === amt ? 'bg-primary-50 border-primary-400 text-primary-900' : 'bg-white border-zinc-200 text-zinc-800 hover:border-primary-300'}`}
                     >
                       {amt >= 1000 ? `${amt / 1000}rb` : amt}
                     </button>
@@ -779,7 +779,7 @@ export default function POSPage() {
 
           {paymentMethod === 'cash' && (
             <div className="space-y-3">
-              <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
+              <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-3 sm:p-4">
                 <p className="text-[11px] font-bold text-zinc-500 uppercase tracking-[0.08em]">Uang Diterima</p>
                 <div className="flex items-baseline gap-1 mt-1">
                   <span className="font-mono text-lg text-zinc-400">Rp</span>
@@ -792,23 +792,23 @@ export default function POSPage() {
                     onKeyDown={(e) => e.key === 'Enter' && processPayment()}
                     placeholder="0"
                     data-testid="payment-cash-input"
-                    className="flex-1 min-w-0 bg-transparent font-mono text-3xl font-semibold text-zinc-900 tabular focus:outline-none placeholder:text-zinc-300"
+                    className="flex-1 min-w-0 bg-transparent font-mono text-2xl sm:text-3xl font-semibold text-zinc-900 tabular focus:outline-none placeholder:text-zinc-300"
                   />
                 </div>
               </div>
               <div
                 data-testid="payment-change-display"
-                className={`rounded-2xl p-4 flex items-center justify-between transition-colors ${!cashReceived ? 'bg-zinc-50 border border-dashed border-zinc-200' : change >= 0 ? 'bg-emerald-50 border border-emerald-200' : 'bg-red-50 border border-red-200'
+                className={`rounded-2xl p-3 sm:p-4 flex items-center justify-between transition-colors ${!cashReceived ? 'bg-zinc-50 border border-dashed border-zinc-200' : change >= 0 ? 'bg-emerald-50 border border-emerald-200' : 'bg-red-50 border border-red-200'
                   }`}
               >
                 <p className={`text-sm font-bold ${!cashReceived ? 'text-zinc-400' : change >= 0 ? 'text-emerald-800' : 'text-red-700'}`}>
                   {!cashReceived ? 'Kembalian' : change >= 0 ? 'Kembalian' : 'Masih kurang'}
                 </p>
-                <p className={`font-mono text-2xl font-semibold tabular ${!cashReceived ? 'text-zinc-300' : change >= 0 ? 'text-emerald-700' : 'text-red-600'}`} data-testid="payment-change-amount">
+                <p className={`font-mono text-xl sm:text-2xl font-semibold tabular ${!cashReceived ? 'text-zinc-300' : change >= 0 ? 'text-emerald-700' : 'text-red-600'}`} data-testid="payment-change-amount">
                   {formatRupiah(Math.abs(cashReceived ? change : 0))}
                 </p>
               </div>
-              <NumericKeypad value={cashReceived} onChange={setCashReceived} testIdPrefix="payment-keypad" />
+              <NumericKeypad value={cashReceived} onChange={setCashReceived} testIdPrefix="payment-keypad" buttonClassName="h-10 !text-base sm:h-13 sm:!text-lg" />
             </div>
           )}
         </div>
