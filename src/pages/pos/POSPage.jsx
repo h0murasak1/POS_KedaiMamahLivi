@@ -480,7 +480,7 @@ export default function POSPage() {
   const cashValue = parseFloat(cashReceived) || 0
 
   return (
-    <div className="h-full flex-1 flex flex-col overflow-hidden min-h-0">
+    <div className="flex-1 flex flex-col overflow-hidden min-h-0">
       <Header title="Kasir" subtitle="Catat pesanan pelanggan dengan cepat" />
       <div className="flex-1 flex overflow-hidden relative">
         {/* Menu Area */}
